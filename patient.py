@@ -50,6 +50,9 @@ class Patient:
 
         return age
 
+    def is_female(self):
+        return self.sex.lower() == "v" or self.sex.lower() == "f"
+
     def calculate_chads_vasc(self, timestamp):
         score = sum([
             1 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), heart_failure)) else 0,
@@ -66,7 +69,7 @@ class Patient:
         elif age >= 65:
             score += 1
 
-        if self.sex.lower() == "v" or self.sex.lower() == "f":
+        if self.is_female():
             score += 1
 
         return score
@@ -96,14 +99,12 @@ class Patient:
 
     def find_chadsvasc_changes(self):
         """"
-        Calculate Chadsvasc before any diagnose
-            - Add score for each diagnose
-            - Update at specific birthdays
-            Format [ChadsvascChangeEvent]
+        It's more efficient to pre-calculate the CHADS-VASc score based on all data,
+        than to calculate it while simulating. This method does assume that all diagnoses
+        are in effect indefinitely (chronic).
         """
 
-        changes = []
-        changes.append(ChadsvascChangeEvent(self.birth_date, 0))
+        changes = [ChadsvascChangeEvent(self.birth_date, 0)]
         for _, ds in self.diagnoses.items():
             for diagnosis in ds:
                 date = diagnosis.start_date

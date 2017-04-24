@@ -15,17 +15,17 @@ def add_diseases(patients, diagnoses):
             patients[patient_nr].add_diagnosis(diagnosis)
 
 
-def add_feature_slice(data, diseases, patient, AC, sim_date):
-    has_diseases = {}
+def add_feature_slice(data, diseases, patient, sim_date):
+    has_diseases = []
     for d in diseases:
-        has_diseases[d] = patient.has_disease(d, sim_date)
+        has_diseases.append(patient.has_disease(d, sim_date))
 
-    feature_vector = [1 if d else 0 for d in list(has_diseases.values())]
-    feature_vector.append(1 if patient.sex.lower() == "v" else 0)
+    feature_vector = [1 if d else 0 for d in has_diseases]
+    feature_vector.append(1 if patient.is_female() else 0)
     feature_vector.append(patient.calculate_age(sim_date))
 
     data["Data"].append(feature_vector)
-    data["Target"].append(AC)
+    data["Target"].append(patient.should_have_AC(sim_date))
 
     if len(data["Data Labels"]) < len(feature_vector):
         data["Data Labels"] = [str(d) for d in diseases]
@@ -63,6 +63,7 @@ def sim(patients, diagnoses):
     sim_end_date = datetime.date(2009, 7, 1)
 
     start = timeit.default_timer()
+
     for k, p in patients.items():
         p.find_chadsvasc_changes()
 
@@ -76,10 +77,10 @@ def sim(patients, diagnoses):
                 patients.pop('key', None)
                 continue
 
-            AC = patient.should_have_AC(sim_date)
-            add_feature_slice(data, diseases, patient, AC, sim_date)
+            add_feature_slice(data, diseases, patient, sim_date)
 
         sim_date += relativedelta(months=+1)
+
     stop = timeit.default_timer()
     print("Time elapsed: {}".format(stop - start))
 
@@ -92,6 +93,7 @@ def main(cache=False):
         print("Reading...")
         data = read("output/test.json")
     else:
+        print("Loading Data...")
         patients = get_patients("data/bsc_old/patients_general.csv")
         diagnoses = get_diagnoses("data/bsc_old/patients_diseases.csv")
 
