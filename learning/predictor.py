@@ -1,0 +1,56 @@
+import random
+
+import matplotlib.pyplot as plt
+from sklearn import ensemble
+
+
+def random_list_split(lst, rate):
+    left_size = round(len(lst) * (1 - rate))
+
+    random.shuffle(lst)
+    return lst[0:left_size], lst[left_size:]
+
+
+def merge_data_target(data, target):
+    merge = list(zip(data, target))
+    return merge
+
+
+def split_data_target(merge):
+    data = []
+    target = []
+    data[:], target[:] = zip(*merge)
+
+    return data, target
+
+
+def predict(input):
+    clf = ensemble.RandomForestClassifier(n_estimators=100)
+
+    data = merge_data_target(input["Data"], input["Target"])
+    learn_set, test_set = random_list_split(data, 0.04)
+
+    learn_data, learn_target = split_data_target(learn_set)
+    test_data, test_target = split_data_target(test_set)
+
+    clf.fit(learn_data, learn_target)
+
+    predictions = clf.predict(test_data)
+
+
+    correct = 0
+    wrong = 0
+    for i in range(len(test_data)):
+        if test_target[i] == predictions[i]:
+            correct += 1
+        else:
+            wrong += 1
+
+    print("Correct: {}\nWrong: {}".format(correct, wrong))
+
+    importances = clf.feature_importances_
+    plt.bar(range(len(input["Data"][0])), importances)
+    plt.title("Feature Importance")
+    plt.xticks(range(len(input["Data"][0])), input["Data Labels"], rotation='vertical')
+    plt.show()
+
