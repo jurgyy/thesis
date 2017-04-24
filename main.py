@@ -83,17 +83,17 @@ def sim(patients, diagnoses):
     stop = timeit.default_timer()
     print("Time elapsed: {}".format(stop - start))
 
-    write("C:\\Users\\JurgenB\\Downloads\\Python\Msc\\test_data\\test.json", data)
+    write("output/test.json", data)
     return data
 
 
 def main(cache=False):
     if cache:
         print("Reading...")
-        data = read("C:\\Users\\JurgenB\\Downloads\\Python\Msc\\test_data\\test.json")
+        data = read("output/test.json")
     else:
-        patients = get_patients("C:\\Users\\JurgenB\\Downloads\\Python\\Msc\\test_data\\patients_general.csv")
-        diagnoses = get_diagnoses("C:\\Users\\JurgenB\\Downloads\\Python\\Msc\\test_data\\patients_diseases.csv")
+        patients = get_patients("data/bsc_old/patients_general.csv")
+        diagnoses = get_diagnoses("data/bsc_old/patients_diseases.csv")
 
         add_diseases(patients, diagnoses)
         data = sim(patients, diagnoses)
