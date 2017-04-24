@@ -21,13 +21,12 @@ def get_diagnoses(loc):
         if d.PATIENTNR not in diagnoses:
             diagnoses[d.PATIENTNR] = []
         diagnoses[d.PATIENTNR].append(Diagnosis(Disease(d.SPECIALISM, d.HOOFDDIAG),
-                                                d.BEGINDAT,
-                                                d.EINDDAT))
+                                                d.BEGINDAT, d.EINDDAT))
 
     return merge_overlapping_diagnoses(diagnoses)
 
 
-def split_diseases(diseases):
+def group_diagnoses(diseases):
     dct = {}
     for d in diseases:
         if d.disease not in dct:
@@ -57,10 +56,11 @@ def remove_overlap(diagnoses):
 
 
 def merge_overlapping_diagnoses(diagnoses):
-    for p, ds in diagnoses.items():
-        tmp = []
-        for disease in split_diseases(ds):
-            tmp += remove_overlap(disease)
-        diagnoses[p] = tmp
+    for patient_nr, ds in diagnoses.items():
+        continuous_diagnoses = []
+
+        for diagnosis_group in group_diagnoses(ds):
+            continuous_diagnoses += remove_overlap(diagnosis_group)
+        diagnoses[patient_nr] = continuous_diagnoses
 
     return diagnoses
