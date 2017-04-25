@@ -129,4 +129,3 @@ class ChadsvascChangeEvent:
 
     def __repr__(self):
         return "{} {}".format(self.date, self.score)
-

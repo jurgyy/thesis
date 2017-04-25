@@ -11,6 +11,7 @@ diabetes = [Disease(7, 902),
             Disease(2, 223)]
 stroke = [Disease(2, 101),
           Disease(2, 121),
+          Disease(21, 1111),
           Disease(21, 1112),
           Disease(33, 263)]
 vascular = [Disease(2, 102),
