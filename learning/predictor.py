@@ -48,9 +48,20 @@ def predict(input):
 
     print("Correct: {}\nWrong: {}".format(correct, wrong))
 
+    print("Plotting Important features...")
     importances = clf.feature_importances_
-    plt.bar(range(len(input["Data"][0])), importances)
+    ls = input["Data Labels"]
+    importances, ls = zip(*sorted(zip(importances, ls), reverse=True))
+    for i, v in enumerate(importances):
+        if v < 0.002:
+            importances = importances[:i]
+            ls = ls[:i]
+            break
+
+    xs = range(len(importances))
+
+    plt.bar(xs, importances)
     plt.title("Feature Importance")
-    plt.xticks(range(len(input["Data"][0])), input["Data Labels"], rotation='vertical')
+    plt.xticks(xs, ls, rotation='vertical')
     plt.show()
 

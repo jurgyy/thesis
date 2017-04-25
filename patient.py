@@ -1,6 +1,6 @@
 from dateutil.relativedelta import relativedelta
 
-from chads_vasc_diseases import *
+from disease_groups import *
 
 
 class Patient:
@@ -11,7 +11,8 @@ class Patient:
         self.death_date = death_date
 
         self.diagnoses = {}
-        self.chadsvasc_changes = []
+        self.chads_vasc_changes = []
+        self.strokes = []
 
     def __repr__(self):
         return "({}, {}, {}, {}\nDiseases: {})".format(self.number, self.sex, self.birth_date, self.death_date,
@@ -36,7 +37,7 @@ class Patient:
             return False
 
         for d in self.diagnoses[disease]:
-            if(d.start_date <= timestamp and chronic) or d.start_date <= timestamp <= d.end_date:
+            if (d.start_date <= timestamp and chronic) or d.start_date <= timestamp <= d.end_date:
                 return True
         return False
 
@@ -55,11 +56,11 @@ class Patient:
 
     def calculate_chads_vasc(self, timestamp):
         score = sum([
-            1 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), heart_failure)) else 0,
-            1 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), hypertension)) else 0,
-            1 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), diabetes)) else 0,
-            2 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), stroke)) else 0,
-            1 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), vascular)) else 0,
+            1 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), chads_vasc_c)) else 0,
+            1 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), chads_vasc_h)) else 0,
+            1 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), chads_vasc_d)) else 0,
+            2 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), chads_vasc_s)) else 0,
+            1 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), chads_vasc_v)) else 0,
         ])
 
         age = self.calculate_age(timestamp)
@@ -76,17 +77,24 @@ class Patient:
 
     def should_have_AC(self, timestamp, method="event"):
         if method == "event":
-            if len(self.chadsvasc_changes) == 0:
+            if len(self.chads_vasc_changes) == 0:
                 return False
 
-            tmp = self.chadsvasc_changes[0]
-            for e in self.chadsvasc_changes:
+            tmp = self.chads_vasc_changes[0]
+            for e in self.chads_vasc_changes:
                 if e.date > timestamp:
                     break
 
                 tmp = e
 
             return tmp.score >= 3
+
+        elif method == "stroke_6m":
+            for s in self.strokes:
+                if s <= timestamp <= s + relativedelta(months=+6):
+                    return True
+            return False
+
         else:
             if self.calculate_chads_vasc(timestamp) >= 3:
                 return True
@@ -97,29 +105,41 @@ class Patient:
             return True
         return False
 
-    def find_chadsvasc_changes(self):
+    def find_chads_vasc_changes(self):
         """"
         It's more efficient to pre-calculate the CHADS-VASc score based on all data,
         than to calculate it while simulating. This method does assume that all diagnoses
         are in effect indefinitely (chronic).
         """
 
-        changes = [ChadsvascChangeEvent(self.birth_date, 0)]
+        changes = [ChadsVascChangeEvent(self.birth_date, 0)]
         for _, ds in self.diagnoses.items():
             for diagnosis in ds:
                 date = diagnosis.start_date
-                changes.append(ChadsvascChangeEvent(date, self.calculate_chads_vasc(date)))
+                changes.append(ChadsVascChangeEvent(date, self.calculate_chads_vasc(date)))
 
         date = self.birth_date + relativedelta(years=65)
-        changes.append(ChadsvascChangeEvent(date, self.calculate_chads_vasc(date)))
+        changes.append(ChadsVascChangeEvent(date, self.calculate_chads_vasc(date)))
 
         date = self.birth_date + relativedelta(years=75)
-        changes.append(ChadsvascChangeEvent(date, self.calculate_chads_vasc(date)))
+        changes.append(ChadsVascChangeEvent(date, self.calculate_chads_vasc(date)))
 
-        self.chadsvasc_changes = sorted(changes)
+        self.chads_vasc_changes = sorted(changes)
+
+    def find_strokes(self):
+
+        timestamps = []
+        for s in stroke_diseases:
+            if s not in self.diagnoses:
+                continue
+
+            for d in self.diagnoses[s]:
+                timestamps.append(d.start_date)
+
+        self.strokes = timestamps
 
 
-class ChadsvascChangeEvent:
+class ChadsVascChangeEvent:
     def __init__(self, date, score):
         self.date = date
         self.score = score

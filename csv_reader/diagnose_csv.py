@@ -8,7 +8,7 @@ from csv_reader.reader import convert_to_date
 
 
 def get_diagnoses(loc):
-    dataframe = pd.read_csv(loc, sep=';')
+    dataframe = pd.read_csv(loc, sep='\t')
     # Fields: PATIENTNR	SPECIALISM	HOOFDDIAG	OMSCHRIJV	BEGINDAT	EINDDAT
 
     dataframe['BEGINDAT'] = dataframe['BEGINDAT'].apply(convert_to_date)
@@ -20,7 +20,8 @@ def get_diagnoses(loc):
     for d in dataframe.itertuples():
         if d.PATIENTNR not in diagnoses:
             diagnoses[d.PATIENTNR] = []
-        diagnoses[d.PATIENTNR].append(Diagnosis(Disease(d.SPECIALISM, d.HOOFDDIAG),
+        diagnoses[d.PATIENTNR].append(Diagnosis(Disease(str(d.SPECIALISM), str(d.HOOFDDIAG),
+                                                        description=str(d.OMSCHRIJV)),
                                                 d.BEGINDAT, d.EINDDAT))
 
     return merge_overlapping_diagnoses(diagnoses)

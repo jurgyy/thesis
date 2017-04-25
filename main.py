@@ -13,6 +13,7 @@ def add_diseases(patients, diagnoses):
     for patient_nr, diagnoses in diagnoses.items():
         for diagnosis in diagnoses:
             patients[patient_nr].add_diagnosis(diagnosis)
+        # print(patient_nr, diagnoses)
 
 
 def add_feature_slice(data, diseases, patient, sim_date):
@@ -25,7 +26,7 @@ def add_feature_slice(data, diseases, patient, sim_date):
     feature_vector.append(patient.calculate_age(sim_date))
 
     data["Data"].append(feature_vector)
-    data["Target"].append(patient.should_have_AC(sim_date))
+    data["Target"].append(patient.should_have_AC(sim_date, method="stroke_6m"))
 
     if len(data["Data Labels"]) < len(feature_vector):
         data["Data Labels"] = [str(d) for d in diseases]
@@ -65,7 +66,9 @@ def sim(patients, diagnoses):
     start = timeit.default_timer()
 
     for k, p in patients.items():
-        p.find_chadsvasc_changes()
+        p.find_strokes()
+        # print("\n")
+        p.find_chads_vasc_changes()
 
     data = {"Data": [], "Target": [], "Data Labels": []}
 
@@ -84,6 +87,7 @@ def sim(patients, diagnoses):
     stop = timeit.default_timer()
     print("Time elapsed: {}".format(stop - start))
 
+    print("Writing output file...")
     write("output/test.json", data)
     return data
 
@@ -94,8 +98,8 @@ def main(cache=False):
         data = read("output/test.json")
     else:
         print("Loading Data...")
-        patients = get_patients("data/bsc_old/patients_general.csv")
-        diagnoses = get_diagnoses("data/bsc_old/patients_diseases.csv")
+        patients = get_patients("data/msc_test/patients_general.csv")
+        diagnoses = get_diagnoses("data/msc_test/patients_diseases.csv")
 
         add_diseases(patients, diagnoses)
         data = sim(patients, diagnoses)
@@ -105,4 +109,4 @@ def main(cache=False):
 
 
 if __name__ == "__main__":
-    main()
+    main(cache=False)

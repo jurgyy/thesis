@@ -5,7 +5,7 @@ from csv_reader.reader import  convert_to_date
 
 
 def get_patients(loc):
-    dataframe = pd.read_csv(loc, sep=';')
+    dataframe = pd.read_csv(loc, sep='\t')
     # Fields: PATIENTNR	VOORLETTER	ACHTERNAAM	GESLACHT	GEBDAT	OVERLEDEN	OVERLDAT	hasAC
 
     dataframe['GEBDAT'] = dataframe['GEBDAT'].apply(convert_to_date)
