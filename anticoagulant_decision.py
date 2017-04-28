@@ -23,6 +23,6 @@ def event_based(patient, timestamp):
 
 def future_stroke(patient, timestamp, months=6):
     for s in patient.strokes:
-        if s <= timestamp <= s + relativedelta(months=+6):
+        if s <= timestamp <= s + relativedelta(months=+months):
             return True
     return False

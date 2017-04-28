@@ -88,7 +88,7 @@ class Patient:
         return score
 
     def should_have_AC(self, timestamp, method, kwargs):
-        method(self, timestamp, **kwargs)
+        return method(self, timestamp, **kwargs)
 
     def is_dead(self, timestamp):
         if self.death_date <= timestamp:

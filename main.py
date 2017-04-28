@@ -28,9 +28,8 @@ def add_feature_slice(data, diseases, patient, sim_date):
     feature_vector.append(patient.calculate_age(sim_date))
 
     data["Data"].append(feature_vector)
-    data["Target"].append(
-        patient.should_have_AC(sim_date, anticoagulant_decision.future_stroke,
-                               {"months": 6}))
+    data["Target"].append(patient.should_have_AC(sim_date, anticoagulant_decision.future_stroke,
+                                                 {"months": 6}))
 
     # TODO: would be more efficient if adding labels could be done before the simulation
     if len(data["Data Labels"]) < len(feature_vector):

@@ -37,7 +37,6 @@ def predict(input):
 
     predictions = clf.predict(test_data)
 
-
     correct = 0
     wrong = 0
     for i in range(len(test_data)):
