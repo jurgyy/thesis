@@ -87,30 +87,8 @@ class Patient:
 
         return score
 
-    def should_have_AC(self, timestamp, method="event"):
-        if method == "event":
-            if len(self.chads_vasc_changes) == 0:
-                return False
-
-            tmp = self.chads_vasc_changes[0]
-            for e in self.chads_vasc_changes:
-                if e.date > timestamp:
-                    break
-
-                tmp = e
-
-            return tmp.score >= 3
-
-        elif method == "stroke_6m":
-            for s in self.strokes:
-                if s <= timestamp <= s + relativedelta(months=+6):
-                    return True
-            return False
-
-        else:
-            if self.calculate_chads_vasc(timestamp) >= 3:
-                return True
-            return False
+    def should_have_AC(self, timestamp, method, kwargs):
+        method(self, timestamp, **kwargs)
 
     def is_dead(self, timestamp):
         if self.death_date <= timestamp:

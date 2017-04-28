@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 from dateutil.relativedelta import relativedelta
 
+import anticoagulant_decision
 from csv_reader.diagnose_csv import get_diagnoses
 from csv_reader.patients_csv import get_patients
 from disease import Disease
@@ -27,7 +28,9 @@ def add_feature_slice(data, diseases, patient, sim_date):
     feature_vector.append(patient.calculate_age(sim_date))
 
     data["Data"].append(feature_vector)
-    data["Target"].append(patient.should_have_AC(sim_date, method="stroke_6m"))
+    data["Target"].append(
+        patient.should_have_AC(sim_date, anticoagulant_decision.future_stroke,
+                               {"months": 6}))
 
     # TODO: would be more efficient if adding labels could be done before the simulation
     if len(data["Data Labels"]) < len(feature_vector):
@@ -96,7 +99,7 @@ def write(loc, data):
 def sim(patients, diagnoses):
     diseases = get_all_diseases(diagnoses)
     diseases = reduce_feature_space(diseases, diagnoses, min_frequency=4)
-    plot_disease_frequency(diseases, diagnoses)
+    # plot_disease_frequency(diseases, diagnoses)
 
     sim_date = datetime.date(2008, 1, 1)
     sim_end_date = datetime.date(2009, 7, 1)
@@ -114,7 +117,7 @@ def sim(patients, diagnoses):
         print(sim_date)
         for key, patient in patients.items():
             if patient.is_dead(sim_date):
-                del patients[key]
+                # del patients[key]
                 continue
 
             add_feature_slice(data, diseases, patient, sim_date)
