@@ -18,14 +18,9 @@ def add_diseases(patients, diagnoses):
 
 def add_feature_slice(data, diseases, patient, sim_date):
     # TODO: Somehow not include strokes as actual features
-    has_diseases = []
-    for d in diseases:
-        # if d in stroke_diseases and True:
-        #     continue
-        has_diseases.append(patient.has_disease(d, sim_date))
-
-    feature_vector = [1 if d else 0 for d in has_diseases]
+    feature_vector = [1 if patient.has_disease(d, sim_date) else 0 for d in diseases]
     # feature_vector += [patient.days_since_disease(d, sim_date) for d in diseases]
+
     feature_vector.append(1 if patient.is_female() else 0)
     feature_vector.append(patient.calculate_age(sim_date))
 
