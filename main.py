@@ -1,11 +1,13 @@
 import datetime
 import json
 import timeit
+import matplotlib.pyplot as plt
 
 from dateutil.relativedelta import relativedelta
 
 from csv_reader.diagnose_csv import get_diagnoses
 from csv_reader.patients_csv import get_patients
+from disease import Disease
 from disease_groups import stroke_diseases
 from learning.predictor import predict
 
@@ -19,7 +21,7 @@ def add_diseases(patients, diagnoses):
 def add_feature_slice(data, diseases, patient, sim_date):
     # TODO: Somehow not include strokes as actual features
     feature_vector = [1 if patient.has_disease(d, sim_date) else 0 for d in diseases]
-    # feature_vector += [patient.days_since_disease(d, sim_date) for d in diseases]
+    feature_vector += [patient.days_since_disease(d, sim_date) for d in diseases]
 
     feature_vector.append(1 if patient.is_female() else 0)
     feature_vector.append(patient.calculate_age(sim_date))
@@ -27,9 +29,10 @@ def add_feature_slice(data, diseases, patient, sim_date):
     data["Data"].append(feature_vector)
     data["Target"].append(patient.should_have_AC(sim_date, method="stroke_6m"))
 
+    # TODO: would be more efficient if adding labels could be done before the simulation
     if len(data["Data Labels"]) < len(feature_vector):
         data["Data Labels"] = [str(d) for d in diseases]
-        # data["Data Labels"] += ["days since {}".format(d) for d in diseases]
+        data["Data Labels"] += ["days since {}".format(d) for d in diseases]
         data["Data Labels"] += ["Gender", "Age"]
 
 
@@ -40,6 +43,39 @@ def get_all_diseases(diagnoses):
             diseases.add(d.disease)
 
     return diseases
+
+
+def get_disease_frequency(diseases, diagnoses):
+    frequency = {d: 0 for d in diseases}
+
+    for _, patient_diagnoses in diagnoses.items():
+        for diagnosis in patient_diagnoses:
+            if diagnosis.disease not in frequency:
+                continue
+            frequency[diagnosis.disease] += 1
+
+    return frequency
+
+
+def reduce_feature_space(diseases, diagnoses, min_frequency):
+    frequency = get_disease_frequency(diseases, diagnoses)
+
+    diseases = [d for d, f in frequency.items() if f >= min_frequency]
+    return set(diseases)
+
+
+def plot_disease_frequency(diseases, diagnoses):
+    frequency = get_disease_frequency(diseases, diagnoses)
+
+    labels, y = map(list, zip(*frequency.items()))
+    labels = map(str, labels)
+
+    y, labels = zip(*sorted(zip(y, labels)))
+
+    x = range(len(labels))
+    plt.barh(x, y, log=True)
+    plt.yticks(x, labels)
+    plt.show()
 
 
 def read(loc):
@@ -59,8 +95,8 @@ def write(loc, data):
 
 def sim(patients, diagnoses):
     diseases = get_all_diseases(diagnoses)
-    print(len(diseases))
-    exit()
+    diseases = reduce_feature_space(diseases, diagnoses, min_frequency=4)
+    plot_disease_frequency(diseases, diagnoses)
 
     sim_date = datetime.date(2008, 1, 1)
     sim_end_date = datetime.date(2009, 7, 1)
@@ -78,7 +114,7 @@ def sim(patients, diagnoses):
         print(sim_date)
         for key, patient in patients.items():
             if patient.is_dead(sim_date):
-                patients.pop('key', None)
+                del patients[key]
                 continue
 
             add_feature_slice(data, diseases, patient, sim_date)
