@@ -28,7 +28,7 @@ def predict(input):
     clf = ensemble.RandomForestClassifier(n_estimators=100)
 
     data = merge_data_target(input["Data"], input["Target"])
-    learn_set, test_set = random_list_split(data, 0.04)
+    learn_set, test_set = random_list_split(data, 0.3)
 
     learn_data, learn_target = split_data_target(learn_set)
     test_data, test_target = split_data_target(test_set)
@@ -60,8 +60,8 @@ def predict(input):
 
     xs = range(len(importances))
 
-    plt.bar(xs, importances)
+    plt.barh(xs, importances)
     plt.title("Feature Importance")
-    plt.xticks(xs, ls, rotation='vertical')
+    plt.yticks(xs, ls)
     plt.show()
 

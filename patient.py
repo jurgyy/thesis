@@ -32,14 +32,26 @@ class Patient:
 
         return current_diseases
 
-    def has_disease(self, disease, timestamp, chronic=True):
+    def has_disease(self, disease, timestamp, chronic=False):
         if disease not in self.diagnoses:
             return False
 
         for d in self.diagnoses[disease]:
-            if (d.start_date <= timestamp and chronic) or d.start_date <= timestamp <= d.end_date:
+            if (chronic and d.start_date <= timestamp) or d.start_date <= timestamp <= d.end_date:
                 return True
         return False
+
+    def days_since_disease(self, disease, timestamp):
+        if disease not in self.diagnoses:
+            return 0
+
+        days = [(timestamp - d.start_date).days for d in self.diagnoses[disease]
+                if (timestamp - d.start_date).days >= 0]
+
+        if not days:
+            return 0
+
+        return min(days)
 
     def calculate_age(self, timestamp):
         age = timestamp.year - self.birth_date.year
