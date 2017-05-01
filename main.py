@@ -21,8 +21,9 @@ def add_diseases(patients, diagnoses):
 
 def add_feature_slice(data, diseases, patient, sim_date):
     # TODO: Somehow not include strokes as actual features
-    feature_vector = [1 if patient.has_disease(d, sim_date) else 0 for d in diseases]
-    feature_vector += [patient.days_since_disease(d, sim_date) for d in diseases]
+    feature_vector = [1 if patient.has_disease(d, sim_date, chronic=True) else 0 for d in diseases]
+    feature_vector += [patient.days_since_disease(d, sim_date) if feature_vector[i] else 0
+                       for i, d in enumerate(diseases)]
 
     feature_vector.append(1 if patient.is_female() else 0)
     feature_vector.append(patient.calculate_age(sim_date))
@@ -95,11 +96,7 @@ def write(loc, data):
         json.dump(data, f)
 
 
-def sim(patients, diagnoses):
-    diseases = get_all_diseases(diagnoses)
-    diseases = reduce_feature_space(diseases, diagnoses, min_frequency=4)
-    # plot_disease_frequency(diseases, diagnoses)
-
+def sim(patients, diseases):
     sim_date = datetime.date(2008, 1, 1)
     sim_end_date = datetime.date(2009, 7, 1)
 
@@ -141,7 +138,12 @@ def main(cache=False):
         diagnoses = get_diagnoses("data/msc_test/patients_diseases.csv")
 
         add_diseases(patients, diagnoses)
-        data = sim(patients, diagnoses)
+
+        diseases = get_all_diseases(diagnoses)
+        diseases = reduce_feature_space(diseases, diagnoses, min_frequency=4)
+        # plot_disease_frequency(diseases, diagnoses)
+
+        data = sim(patients, diseases)
 
     print("Predicting...")
     predict(data)
