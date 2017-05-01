@@ -9,3 +9,6 @@ class Diagnosis:
 
     def __lt__(self, other):
         return self.start_date < other.start_date
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__

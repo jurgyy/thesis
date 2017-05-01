@@ -104,6 +104,7 @@ def get_random_subset(patients, test_rate=0.30):
     test_size = round(len(patient_nrs) * test_rate)
 
     random.shuffle(patient_nrs)
+
     # Workaround for np.int64 to native int conversion; perhaps there's a better way
     return np.array(patient_nrs[0:test_size]).tolist()
 

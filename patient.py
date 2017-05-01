@@ -18,6 +18,9 @@ class Patient:
         return "({}, {}, {}, {}\nDiseases: {})".format(self.number, self.sex, self.birth_date, self.death_date,
                                                        self.diagnoses)
 
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
     def add_diagnosis(self, diagnosis):
         if diagnosis.disease not in self.diagnoses:
             self.diagnoses[diagnosis.disease] = []
