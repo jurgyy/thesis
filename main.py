@@ -1,6 +1,9 @@
+import numpy as np
 import datetime
 import json
 import timeit
+import random
+
 import matplotlib.pyplot as plt
 
 from dateutil.relativedelta import relativedelta
@@ -96,7 +99,16 @@ def write(loc, data):
         json.dump(data, f)
 
 
-def sim(patients, diseases):
+def get_random_subset(patients, test_rate=0.30):
+    patient_nrs = list(patients.keys())
+    test_size = round(len(patient_nrs) * test_rate)
+
+    random.shuffle(patient_nrs)
+    # Workaround for np.int64 to native int conversion; perhaps there's a better way
+    return np.array(patient_nrs[0:test_size]).tolist()
+
+
+def sim(patients, diseases, write_output=False):
     sim_date = datetime.date(2008, 1, 1)
     sim_end_date = datetime.date(2009, 7, 1)
 
@@ -106,7 +118,8 @@ def sim(patients, diseases):
         p.find_strokes()
         p.find_chads_vasc_changes()
 
-    data = {"Data": [], "Target": [], "Data Labels": []}
+    learn_data = {"Data": [], "Target": [], "Data Labels": []}
+    test_data = {"Data": [], "Target": [], "Data Labels": [], "Patients": get_random_subset(patients)}
 
     print("Simulating...\nStart Date: {}\nEnd Date: {}".format(sim_date, sim_end_date))
     while sim_date < sim_end_date:
@@ -116,22 +129,29 @@ def sim(patients, diseases):
                 # del patients[key]
                 continue
 
-            add_feature_slice(data, diseases, patient, sim_date)
+            if key in test_data["Patients"]:
+                add_feature_slice(test_data, diseases, patient, sim_date)
+            else:
+                add_feature_slice(learn_data, diseases, patient, sim_date)
 
         sim_date += relativedelta(months=+1)
 
     stop = timeit.default_timer()
     print("Time elapsed: {}".format(stop - start))
 
-    print("Writing output file...")
-    write("output/test.json", data)
-    return data
+    if write_output:
+        print("Writing output file...")
+        write("output/learn_data.json", learn_data)
+        write("output/test_data.json", test_data)
+
+    return learn_data, test_data
 
 
 def main(cache=False):
     if cache:
         print("Reading...")
-        data = read("output/test.json")
+        learn = read("output/learn_data.json")
+        test = read("output/test_data.json")
     else:
         print("Loading Data...")
         patients = get_patients("data/msc_test/patients_general.csv")
@@ -143,10 +163,10 @@ def main(cache=False):
         diseases = reduce_feature_space(diseases, diagnoses, min_frequency=4)
         # plot_disease_frequency(diseases, diagnoses)
 
-        data = sim(patients, diseases)
+        learn, test = sim(patients, diseases)
 
     print("Predicting...")
-    predict(data)
+    predict(learn, test)
 
 
 if __name__ == "__main__":
