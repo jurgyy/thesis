@@ -32,3 +32,5 @@ stroke_diseases = [Disease("INT", "101"),
                    Disease("INT", "121"),
                    Disease("NEU", "1111"),
                    Disease("GER", "263")]
+
+atrial_fib = [Disease("CAR", "401")]

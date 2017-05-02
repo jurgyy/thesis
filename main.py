@@ -12,7 +12,7 @@ import anticoagulant_decision
 from csv_reader.diagnose_csv import get_diagnoses
 from csv_reader.patients_csv import get_patients
 from disease import Disease
-from disease_groups import stroke_diseases
+from disease_groups import stroke_diseases, atrial_fib
 from learning.predictor import predict
 
 
@@ -126,8 +126,8 @@ def sim(patients, diseases, write_output=False):
     while sim_date < sim_end_date:
         print(sim_date)
         for key, patient in patients.items():
-            # TODO: Check if patient has AF!
-            if not patient.is_alive(sim_date):
+            if (not patient.is_alive(sim_date)) or \
+                    (not patient.has_disease_group(atrial_fib, sim_date, chronic=True)):
                 continue
 
             if key in test_data["Patients"]:

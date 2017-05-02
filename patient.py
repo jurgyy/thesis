@@ -45,6 +45,9 @@ class Patient:
                 return True
         return False
 
+    def has_disease_group(self, group, timestamp, chronic=False):
+        return any(map(lambda d: self.has_disease(d, timestamp, chronic=chronic), group))
+
     def days_since_diagnosis(self, disease, timestamp):
         if disease not in self.diagnoses:
             return 0
@@ -72,11 +75,11 @@ class Patient:
 
     def calculate_chads_vasc(self, timestamp):
         score = sum([
-            1 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), chads_vasc_c)) else 0,
-            1 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), chads_vasc_h)) else 0,
-            1 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), chads_vasc_d)) else 0,
-            2 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), chads_vasc_s)) else 0,
-            1 if any(map(lambda d: self.has_disease(d, timestamp, chronic=True), chads_vasc_v)) else 0,
+            1 if self.has_disease_group(chads_vasc_c, timestamp, chronic=True) else 0,
+            1 if self.has_disease_group(chads_vasc_h, timestamp, chronic=True) else 0,
+            1 if self.has_disease_group(chads_vasc_d, timestamp, chronic=True) else 0,
+            2 if self.has_disease_group(chads_vasc_s, timestamp, chronic=True) else 0,
+            1 if self.has_disease_group(chads_vasc_v, timestamp, chronic=True) else 0
         ])
 
         age = self.calculate_age(timestamp)
