@@ -33,7 +33,7 @@ def add_feature_slice(data, diseases, patient, sim_date):
 
     data["Data"].append(feature_vector)
     data["Target"].append(patient.should_have_AC(sim_date, anticoagulant_decision.future_stroke,
-                                                 {"months": 6}))
+                                                 {"months": 12}))
 
     # TODO: would be more efficient if adding labels could be done before the simulation
     if len(data["Data Labels"]) < len(feature_vector):
@@ -111,7 +111,7 @@ def get_random_subset(patients, test_rate=0.30):
 
 def sim(patients, diseases, write_output=False):
     sim_date = datetime.date(2008, 1, 1)
-    sim_end_date = datetime.date(2009, 7, 1)
+    sim_end_date = datetime.date(2011, 7, 1)
 
     start = timeit.default_timer()
 
@@ -164,7 +164,7 @@ def main(cache=False):
         diseases = reduce_feature_space(diseases, diagnoses, min_frequency=4)
         # plot_disease_frequency(diseases, diagnoses)
 
-        learn, test = sim(patients, diseases)
+        learn, test = sim(patients, diseases, write_output=False)
 
     print("Predicting...")
     predict(learn, test)

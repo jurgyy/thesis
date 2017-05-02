@@ -9,15 +9,28 @@ def predict(learn_data, test_data):
 
     predictions = clf.predict(test_data["Data"])
 
-    correct = 0
-    wrong = 0
+    # True Positives, True Negatives, False Positives, False Negatives
+    # TP: Stroke in 12 months, predictor target == 1
+    # TN: No stroke in 12 months, predictor target == 0
+    # FP: No stroke in 12 months, predictor target == 1
+    # FN: Stroke in 12 months, predictor target == 0
+    TP = TN = FP = FN = 0
     for i in range(len(test_data["Data"])):
-        if test_data["Target"][i] == predictions[i]:
-            correct += 1
+        target = test_data["Target"][i]
+        prediction = predictions[i]
+        if target == prediction == 1:
+            TP += 1
+        elif target == prediction == 0:
+            TN += 1
+        elif target == 1 and prediction == 0:
+            FN += 1
         else:
-            wrong += 1
+            FP += 1
 
-    print("Correct: {}\nWrong: {}".format(correct, wrong))
+    print("True Positive:  {}".format(TP))
+    print("True Negative:  {}".format(TN))
+    print("False Positive: {}".format(FP))
+    print("False Negative: {}".format(FN))
 
     print("Plotting Important features...")
     importances = clf.feature_importances_
