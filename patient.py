@@ -28,10 +28,11 @@ class Patient:
         self.diagnoses[diagnosis.disease].append(diagnosis)
 
     def get_current_diseases(self, timestamp):
-        current_diseases = []
-        for disease, diagnose in self.diagnoses.items():
-            if diagnose.start_date <= timestamp <= diagnose.end_date:
-                current_diseases.append(diagnose)
+        current_diseases = set()
+        for disease, diagnoses in self.diagnoses.items():
+            for diagnose in diagnoses:
+                if diagnose.start_date <= timestamp <= diagnose.end_date:
+                    current_diseases.add(diagnose.disease)
 
         return current_diseases
 
@@ -44,7 +45,7 @@ class Patient:
                 return True
         return False
 
-    def days_since_disease(self, disease, timestamp):
+    def days_since_diagnosis(self, disease, timestamp):
         if disease not in self.diagnoses:
             return 0
 
@@ -93,22 +94,29 @@ class Patient:
     def should_have_AC(self, timestamp, method, kwargs):
         return method(self, timestamp, **kwargs)
 
-    def is_dead(self, timestamp):
-        if self.death_date <= timestamp:
+    def is_alive(self, timestamp):
+        if self.birth_date <= timestamp < self.death_date:
             return True
         return False
 
     def find_chads_vasc_changes(self):
-        """"
+        """
         It's more efficient to pre-calculate the CHADS-VASc score based on all data,
         than to calculate it while simulating. This method does assume that all diagnoses
         are in effect indefinitely (chronic).
         """
 
-        changes = [ChadsVascChangeEvent(self.birth_date, 0)]
-        for _, ds in self.diagnoses.items():
+        if self.is_female():
+            changes = [ChadsVascChangeEvent(self.birth_date, 1)]
+        else:
+            changes = [ChadsVascChangeEvent(self.birth_date, 0)]
+
+        for d, ds in self.diagnoses.items():
+            if d not in set(chads_vasc_c + chads_vasc_h + chads_vasc_d + chads_vasc_s + chads_vasc_v):
+                continue
             for diagnosis in ds:
                 date = diagnosis.start_date
+
                 changes.append(ChadsVascChangeEvent(date, self.calculate_chads_vasc(date)))
 
         date = self.birth_date + relativedelta(years=65)
@@ -142,3 +150,6 @@ class ChadsVascChangeEvent:
 
     def __repr__(self):
         return "{} {}".format(self.date, self.score)
+
+    def __eq__(self, other):
+        return self.date == other.date and self.score == other.score

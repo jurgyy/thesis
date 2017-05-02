@@ -25,7 +25,7 @@ class TestMainFunctions(TestCase):
                      Diagnosis(Disease("TEST", "2"), d(2006, 1, 1), d(2006, 12, 31))]
                  }
 
-    def testAddDiseases(self):
+    def test_add_diseases(self):
         add_diseases(self.patients, self.diagnoses)
         self.assertEqual(self.patients[2].diagnoses,
                          {Disease("TEST", "1"): [Diagnosis(Disease("TEST", "1"), d(2005, 1, 1), d(2005, 12, 31))]})
@@ -39,17 +39,17 @@ class TestMainFunctions(TestCase):
                          {Disease("TEST", "1"): [Diagnosis(Disease("TEST", "1"), d(2005, 1, 1), d(2005, 12, 31))],
                           Disease("TEST", "2"): [Diagnosis(Disease("TEST", "2"), d(2006, 1, 1), d(2006, 12, 31))]})
 
-    def testGetAllDiseases(self):
+    def test_get_all_diseases(self):
         self.assertEqual(get_all_diseases(self.diagnoses), set(self.diseases))
 
-    def testGetDiseaseFrequency(self):
+    def test_get_disease_frequency(self):
         self.assertEqual(get_disease_frequency(self.diseases, self.diagnoses),
                          {Disease("TEST", "1"): 6, Disease("TEST", "2"): 1})
 
-    def testReduceFeatureSpace(self):
+    def test_reduce_feature_space(self):
         self.assertEqual(reduce_feature_space(self.diseases, self.diagnoses, 3), {Disease("TEST", "1")})
 
-    def testGetRandomSubset(self):
+    def test_get_random_subset(self):
         subset = get_random_subset(self.patients, 0.5)
         self.assertEqual(len(subset), 2)
         for s in subset:

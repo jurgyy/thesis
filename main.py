@@ -25,7 +25,7 @@ def add_diseases(patients, diagnoses):
 def add_feature_slice(data, diseases, patient, sim_date):
     # TODO: Somehow not include strokes as actual features
     feature_vector = [1 if patient.has_disease(d, sim_date, chronic=True) else 0 for d in diseases]
-    feature_vector += [patient.days_since_disease(d, sim_date) if feature_vector[i] else 0
+    feature_vector += [patient.days_since_diagnosis(d, sim_date) if feature_vector[i] else 0
                        for i, d in enumerate(diseases)]
 
     feature_vector.append(1 if patient.is_female() else 0)
@@ -126,8 +126,8 @@ def sim(patients, diseases, write_output=False):
     while sim_date < sim_end_date:
         print(sim_date)
         for key, patient in patients.items():
-            if patient.is_dead(sim_date):
-                # del patients[key]
+            # TODO: Check if patient has AF!
+            if not patient.is_alive(sim_date):
                 continue
 
             if key in test_data["Patients"]:
