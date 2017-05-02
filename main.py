@@ -109,15 +109,14 @@ def get_random_subset(patients, test_rate=0.30):
     return np.array(patient_nrs[0:test_size]).tolist()
 
 
-def sim(patients, diseases, write_output=False):
+def simulate_predictor(patients, diseases, write_output=False):
     sim_date = datetime.date(2008, 1, 1)
-    sim_end_date = datetime.date(2011, 7, 1)
+    sim_end_date = datetime.date(2009, 7, 1)
 
     start = timeit.default_timer()
 
     for k, p in patients.items():
         p.find_strokes()
-        p.find_chads_vasc_changes()
 
     learn_data = {"Data": [], "Target": [], "Data Labels": []}
     test_data = {"Data": [], "Target": [], "Data Labels": [], "Patients": get_random_subset(patients)}
@@ -148,6 +147,24 @@ def sim(patients, diseases, write_output=False):
     return learn_data, test_data
 
 
+def simulate_chads_vasc(patients, disease, write_output=False):
+    sim_date = datetime.date(2008, 1, 1)
+    sim_end_date = datetime.date(2009, 7, 1)
+
+    for k, p in patients.items():
+        p.find_chads_vasc_changes()
+
+    print("Simulating...\nStart Date: {}\nEnd Date: {}".format(sim_date, sim_end_date))
+    while sim_date < sim_end_date:
+        print(sim_date)
+        for key, patient in patients.items():
+            if (not patient.is_alive(sim_date)) or \
+                    (not patient.has_disease_group(atrial_fib, sim_date, chronic=True)):
+                continue
+
+            ...
+
+
 def main(cache=False):
     if cache:
         print("Reading...")
@@ -164,7 +181,7 @@ def main(cache=False):
         diseases = reduce_feature_space(diseases, diagnoses, min_frequency=4)
         # plot_disease_frequency(diseases, diagnoses)
 
-        learn, test = sim(patients, diseases, write_output=False)
+        learn, test = simulate_predictor(patients, diseases, write_output=False)
 
     print("Predicting...")
     predict(learn, test)
