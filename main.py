@@ -13,7 +13,7 @@ from csv_reader.diagnose_csv import get_diagnoses
 from csv_reader.patients_csv import get_patients
 from disease import Disease
 from disease_groups import stroke_diseases, atrial_fib
-from learning.predictor import predict
+from learning.predictor import predict, analyze_chads_vasc
 
 
 def add_diseases(patients, diagnoses):
@@ -115,9 +115,6 @@ def simulate_predictor(patients, diseases, write_output=False):
 
     start = timeit.default_timer()
 
-    for k, p in patients.items():
-        p.find_strokes()
-
     learn_data = {"Data": [], "Target": [], "Data Labels": []}
     test_data = {"Data": [], "Target": [], "Data Labels": [], "Patients": get_random_subset(patients)}
 
@@ -147,14 +144,12 @@ def simulate_predictor(patients, diseases, write_output=False):
     return learn_data, test_data
 
 
-def simulate_chads_vasc(patients, disease, write_output=False):
+def simulate_chads_vasc(patients, write_output=False):
     sim_date = datetime.date(2008, 1, 1)
     sim_end_date = datetime.date(2009, 7, 1)
 
-    for k, p in patients.items():
-        p.find_chads_vasc_changes()
-
     print("Simulating...\nStart Date: {}\nEnd Date: {}".format(sim_date, sim_end_date))
+    data = {"Data": [], "Target": []}
     while sim_date < sim_end_date:
         print(sim_date)
         for key, patient in patients.items():
@@ -162,7 +157,17 @@ def simulate_chads_vasc(patients, disease, write_output=False):
                     (not patient.has_disease_group(atrial_fib, sim_date, chronic=True)):
                 continue
 
-            ...
+            data["Data"].append(1 if patient.should_have_AC(sim_date, anticoagulant_decision.event_based) else 0)
+            data["Target"].append(1 if patient.should_have_AC(sim_date, anticoagulant_decision.future_stroke,
+                                                              {"months": 12}) else 0)
+
+        sim_date += relativedelta(months=+1)
+
+    if write_output:
+        print("Writing output file...")
+        write("output/chads-vasc_data.json", data)
+
+    return data
 
 
 def main(cache=False):
@@ -170,6 +175,8 @@ def main(cache=False):
         print("Reading...")
         learn = read("output/learn_data.json")
         test = read("output/test_data.json")
+
+        chads_vasc = read("output/vasc_data.json")
     else:
         print("Loading Data...")
         patients = get_patients("data/msc_test/patients_general.csv")
@@ -181,10 +188,21 @@ def main(cache=False):
         diseases = reduce_feature_space(diseases, diagnoses, min_frequency=4)
         # plot_disease_frequency(diseases, diagnoses)
 
+        for k, p in patients.items():
+            p.find_strokes()
+            p.find_chads_vasc_changes()
+
+        chads_vasc = simulate_chads_vasc(patients)
         learn, test = simulate_predictor(patients, diseases, write_output=False)
 
+    print("CHADS-VASc...")
+    cf_chads_vasc = analyze_chads_vasc(chads_vasc)
+
     print("Predicting...")
-    predict(learn, test)
+    cf_prediction = predict(learn, test)
+
+    cf_chads_vasc.dump()
+    cf_prediction.dump()
 
 
 if __name__ == "__main__":

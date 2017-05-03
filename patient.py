@@ -94,7 +94,7 @@ class Patient:
 
         return score
 
-    def should_have_AC(self, timestamp, method, kwargs):
+    def should_have_AC(self, timestamp, method, kwargs={}):
         return method(self, timestamp, **kwargs)
 
     def is_alive(self, timestamp):
