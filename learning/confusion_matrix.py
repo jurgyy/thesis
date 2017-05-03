@@ -55,7 +55,7 @@ class ConfusionMatrix:
             print(self.name)
         print("Population Size:           {}".format(self.population))
         print("")
-        print("True Positive:             {}".format(self.f_p))
+        print("True Positive:             {}".format(self.t_p))
         print("False Negative:            {}".format(self.f_n))
         print("False Positive:            {}".format(self.f_p))
         print("True Negative:             {}".format(self.t_n))
