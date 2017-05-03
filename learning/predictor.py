@@ -12,6 +12,12 @@ def analyze_chads_vasc(data):
 def predict(learn_data, test_data, plot=False):
     clf = ensemble.RandomForestClassifier(n_estimators=100)
 
+    print("# Learn Data Size: {}".format(len(learn_data["Data"])))
+    print("# Test Data Size:  {}".format(len(test_data["Data"])))
+    print("# Features:        {}".format(len(learn_data["Data"][0])))
+
+    # Max size is between 143.048.538 and 162.471.060 data points
+    # (39508 + 90773) * 1.098 (from 2005 - 2012.7) and (43.939 + 104.031) * 1.098 (from 2005 - 2013)
     clf.fit(learn_data["Data"], learn_data["Target"])
 
     predictions = clf.predict(test_data["Data"])

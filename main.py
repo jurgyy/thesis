@@ -109,21 +109,21 @@ def get_random_subset(patients, test_rate=0.30):
     return np.array(patient_nrs[0:test_size]).tolist()
 
 
-def simulate_predictor(patients, diseases, write_output=False):
-    sim_date = datetime.date(2008, 1, 1)
-    sim_end_date = datetime.date(2009, 7, 1)
+def simulate_predictor(patients, diseases, start, end, write_output=False):
+    sim_date = start
 
     start = timeit.default_timer()
 
     learn_data = {"Data": [], "Target": [], "Data Labels": []}
-    test_data = {"Data": [], "Target": [], "Data Labels": [], "Patients": get_random_subset(patients)}
+    test_data = {"Data": [], "Target": [], "Data Labels": [], "Patients": get_random_subset(patients, test_rate=.70)}
 
-    print("Simulating...\nStart Date: {}\nEnd Date: {}".format(sim_date, sim_end_date))
-    while sim_date < sim_end_date:
+    print("Simulating...\nStart Date: {}\nEnd Date: {}".format(sim_date, end))
+    while sim_date < end:
         print(sim_date)
         for key, patient in patients.items():
             if (not patient.is_alive(sim_date)) or \
-                    (not patient.has_disease_group(atrial_fib, sim_date, chronic=True)):
+                    (not patient.has_disease_group(atrial_fib, sim_date, chronic=True)) or \
+                    (patient.days_since_last_diagnosis(sim_date) > 366):
                 continue
 
             if key in test_data["Patients"]:
@@ -144,13 +144,12 @@ def simulate_predictor(patients, diseases, write_output=False):
     return learn_data, test_data
 
 
-def simulate_chads_vasc(patients, write_output=False):
-    sim_date = datetime.date(2008, 1, 1)
-    sim_end_date = datetime.date(2009, 7, 1)
+def simulate_chads_vasc(patients, start, end, write_output=False):
+    sim_date = start
 
-    print("Simulating...\nStart Date: {}\nEnd Date: {}".format(sim_date, sim_end_date))
+    print("Simulating...\nStart Date: {}\nEnd Date: {}".format(sim_date, end))
     data = {"Data": [], "Target": []}
-    while sim_date < sim_end_date:
+    while sim_date < end:
         print(sim_date)
         for key, patient in patients.items():
             if (not patient.is_alive(sim_date)) or \
@@ -185,15 +184,18 @@ def main(cache=False):
         add_diseases(patients, diagnoses)
 
         diseases = get_all_diseases(diagnoses)
-        diseases = reduce_feature_space(diseases, diagnoses, min_frequency=4)
+        diseases = reduce_feature_space(diseases, diagnoses, min_frequency=10)
         # plot_disease_frequency(diseases, diagnoses)
 
         for k, p in patients.items():
             p.find_strokes()
             p.find_chads_vasc_changes()
 
-        chads_vasc = simulate_chads_vasc(patients)
-        learn, test = simulate_predictor(patients, diseases, write_output=False)
+        start_date = datetime.date(2005, 1, 1)
+        end_date = datetime.date(2012, 7, 1)
+
+        chads_vasc = simulate_chads_vasc(patients, start_date, end_date)
+        learn, test = simulate_predictor(patients, diseases, start_date, end_date, write_output=False)
 
     print("CHADS-VASc...")
     cf_chads_vasc = analyze_chads_vasc(chads_vasc)

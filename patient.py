@@ -11,6 +11,7 @@ class Patient:
         self.death_date = death_date
 
         self.diagnoses = {}
+        self.last_diagnosis = None
         self.chads_vasc_changes = []
         self.strokes = []
 
@@ -26,6 +27,8 @@ class Patient:
             self.diagnoses[diagnosis.disease] = []
 
         self.diagnoses[diagnosis.disease].append(diagnosis)
+        if self.last_diagnosis is None or diagnosis.start_date > self.last_diagnosis.start_date:
+            self.last_diagnosis = diagnosis
 
     def get_current_diseases(self, timestamp):
         current_diseases = set()
@@ -59,6 +62,11 @@ class Patient:
             return 0
 
         return min(days)
+
+    def days_since_last_diagnosis(self, timestamp):
+        if self.last_diagnosis is None:
+            raise Exception("No Diagnoses")
+        return (timestamp - self.last_diagnosis.start_date).days
 
     def calculate_age(self, timestamp):
         age = timestamp.year - self.birth_date.year

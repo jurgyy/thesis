@@ -68,6 +68,12 @@ class TestPatient(TestCase):
         self.assertFalse(Patient(1, 'm', d(1970, 6, 6), d(2008, 10, 5)).is_female())
         self.assertTrue(Patient(1, 'v', d(1970, 6, 6), d(2008, 10, 5)).is_female())
 
+    def test_days_since_last_diagnosis(self):
+        self.assertEqual(self.patient.days_since_last_diagnosis(d(2006, 1, 1)), 0)
+        self.assertEqual(self.patient.days_since_last_diagnosis(d(2006, 2, 1)), 31)
+        self.assertEqual(self.patient.days_since_last_diagnosis(d(2005, 12, 31)), -1)
+        self.assertEqual(self.patient.days_since_last_diagnosis(d(2007, 2, 1)), 396)
+
 
 class TestChadsVasc(TestCase):
     patient_male = Patient(1, 'm', d(1930, 1, 1), d(2015, 12, 31))
