@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class ConfusionMatrix:
     def __init__(self, true, predict, name=None):
         if len(true) != len(predict):
@@ -7,28 +10,29 @@ class ConfusionMatrix:
         self.predict = predict
         self.name = name
 
-        # TODO: Fix bug if any == 0
         self.t_p, self.f_n, self.f_p, self.t_n = self.calculate_matrix()
         self.basic = (self.t_p, self.f_n, self.f_p, self.t_n)
 
-        self.population = self.t_p + self.f_n + self.f_p + self.t_n
-        self.accuracy = (self.t_p + self.t_n) / self.population
-        self.prevalence = (self.t_p + self.f_n) / self.population
+        # Division by zero now returns inf
+        with np.errstate(divide='ignore', invalid='ignore'):
+            self.population = self.t_p + self.f_n + self.f_p + self.t_n
+            self.accuracy = np.divide(self.t_p + self.t_n, self.population)
+            self.prevalence = np.divide(self.t_p + self.f_n, self.population)
 
-        self.ppv = self.t_p / (self.t_p + self. f_p)
-        self.fdr = self.f_p / (self.t_p + self. f_p)
-        self.for_ = self.f_n / (self.t_n + self. f_n)
-        self.npv = self.t_n / (self.t_n + self. f_n)
+            self.ppv = np.divide(self.t_p, (self.t_p + self.f_p))
+            self.fdr = np.divide(self.f_p, (self.t_p + self.f_p))
+            self.for_ = np.divide(self.f_n, (self.t_n + self.f_n))
+            self.npv = np.divide(self.t_n, (self.t_n + self.f_n))
 
-        self.tpr = self.t_p / (self.t_p + self.f_n)
-        self.fnr = self.f_n / (self.t_p + self.f_n)
-        self.fpr = self.f_p / (self.f_p + self.t_n)
-        self.tnr = self.t_n / (self.f_p + self.t_n)
+            self.tpr = np.divide(self.t_p, (self.t_p + self.f_n))
+            self.fnr = np.divide(self.f_n, (self.t_p + self.f_n))
+            self.fpr = np.divide(self.f_p, (self.f_p + self.t_n))
+            self.tnr = np.divide(self.t_n, (self.f_p + self.t_n))
 
-        self.plr = self.tpr / self.fpr
-        self.nlr = self.fnr / self.tnr
+            self.plr = np.divide(self.tpr, self.fpr)
+            self.nlr = np.divide(self.fnr, self.tnr)
 
-        self.dor = self.plr / self.nlr
+            self.dor = np.divide(self.plr, self.nlr)
 
     def calculate_matrix(self):
         t_p = f_n = f_p = t_n = 0
