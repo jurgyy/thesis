@@ -12,3 +12,5 @@ class Diagnosis:
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
+
+    # TODO: Probably move methods such as 'combinable' from reader.py to this class
