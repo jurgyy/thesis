@@ -11,7 +11,7 @@ class ConfusionMatrix:
         self.name = name
 
         self.t_p, self.f_n, self.f_p, self.t_n = self.calculate_matrix()
-        self.basic = (self.t_p, self.f_n, self.f_p, self.t_n)
+        self.matrix = (self.t_p, self.f_n, self.f_p, self.t_n)
 
         # Division by zero now returns inf
         with np.errstate(divide='ignore', invalid='ignore'):
