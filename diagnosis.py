@@ -13,4 +13,9 @@ class Diagnosis:
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
-    # TODO: Probably move methods such as 'combinable' from reader.py to this class
+    def dump(self):
+        print(self.disease.spec)
+        print(self.disease.diag)
+        print(self.disease.description)
+        print(self.start_date)
+        print(self.end_date)
