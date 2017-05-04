@@ -1,15 +1,14 @@
 import pandas as pd
 
 from patient import Patient
-from csv_reader.reader import  convert_to_date
+from csv_reader.reader import convert_to_date
 
 
 def get_patients(loc):
-    dataframe = pd.read_csv(loc, sep='\t')
+    converters = {'GEBDAT': lambda x: convert_to_date(x),
+                  'OVERLDAT': lambda x: convert_to_date(x)}
+    dataframe = pd.read_csv(loc, sep='\t', converters=converters)
     # Fields: PATIENTNR	VOORLETTER	ACHTERNAAM	GESLACHT	GEBDAT	OVERLEDEN	OVERLDAT	hasAC
-
-    dataframe['GEBDAT'] = dataframe['GEBDAT'].apply(convert_to_date)
-    dataframe['OVERLDAT'] = dataframe['OVERLDAT'].apply(convert_to_date)
 
     patients = {}
 

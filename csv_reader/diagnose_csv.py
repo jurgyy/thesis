@@ -8,10 +8,10 @@ from csv_reader.reader import convert_to_date
 
 
 def get_diagnoses(loc):
-    dataframe = pd.read_csv(loc, sep='\t')
+    converters = {'HOOFDDIAG': lambda x: str(x),
+                  'BEGINDAT': lambda x: convert_to_date(x)}
+    dataframe = pd.read_csv(loc, sep='\t', converters=converters)
     # Fields: PATIENTNR	SPECIALISM	HOOFDDIAG	OMSCHRIJV	BEGINDAT	EINDDAT
-
-    dataframe['BEGINDAT'] = dataframe['BEGINDAT'].apply(convert_to_date)
 
     dataframe['EINDDAT'] = dataframe['EINDDAT'].fillna(dataframe['BEGINDAT'] + pd.Timedelta(days=365))
     dataframe['EINDDAT'] = dataframe['EINDDAT'].apply(convert_to_date)
