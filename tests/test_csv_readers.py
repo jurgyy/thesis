@@ -31,13 +31,14 @@ class TestCsvReaders(TestCase):
         disease_TE3_001 = Disease("TE3", "001", description="Test Disease 4")
 
         self.assertEqual(self.diagnoses, {
-            5: [Diagnosis(disease_TE1_000, d(2010, 1, 1), d(2010, 8, 6)),
-                Diagnosis(disease_TE1_001, d(2010, 5, 1), d(2010, 6, 1)),
-                Diagnosis(disease_TE2_001, d(2010, 6, 2), d(2012, 6, 2)),
-                Diagnosis(disease_TE3_001, d(2010, 3, 18), d(2010, 4, 19))],
-            123: [Diagnosis(disease_TE1_000, d(2010, 1, 1), d(2010, 1, 31)),
-                  Diagnosis(disease_TE2_001, d(2011, 6, 3), d(2012, 6, 2))]
+            5: [Diagnosis(disease_TE1_000, d(2010, 1, 1), d(2010, 8, 6), "Tes Tester"),
+                Diagnosis(disease_TE1_001, d(2010, 5, 1), d(2010, 6, 1), "Tes Tester"),
+                Diagnosis(disease_TE2_001, d(2010, 6, 2), d(2012, 6, 2), "Tes Tester"),
+                Diagnosis(disease_TE3_001, d(2010, 3, 18), d(2010, 4, 19), "Tes Tester")],
+            123: [Diagnosis(disease_TE1_000, d(2010, 1, 1), d(2010, 1, 31), "Tes Tester"),
+                  Diagnosis(disease_TE2_001, d(2011, 6, 3), d(2012, 6, 2), "Tes Tester")]
         })
+        # TODO: Test cases with different practitioners
 
     def test_get_medications(self):
         self.assertEqual(self.medications, {5: [Medication("A00AA00", d(2010, 1, 1), d(2010, 1, 1)),

@@ -9,9 +9,10 @@ from csv_reader.reader import convert_to_date
 
 def get_diagnoses(loc):
     converters = {'HOOFDDIAG': lambda x: str(x),
+                  'UITVOERDER': lambda x: str(x),
                   'BEGINDAT': lambda x: convert_to_date(x)}
     dataframe = pd.read_csv(loc, sep='\t', converters=converters)
-    # Fields: PATIENTNR	SPECIALISM	HOOFDDIAG	OMSCHRIJV	BEGINDAT	EINDDAT
+    # Fields: PATIENTNR	SPECIALISM	HOOFDDIAG	OMSCHRIJV	UITVOERDER	BEGINDAT	EINDDAT
 
     dataframe['EINDDAT'] = dataframe['EINDDAT'].fillna(dataframe['BEGINDAT'] + pd.Timedelta(days=365))
     dataframe['EINDDAT'] = dataframe['EINDDAT'].apply(convert_to_date)
@@ -22,7 +23,7 @@ def get_diagnoses(loc):
             diagnoses[d.PATIENTNR] = []
         diagnoses[d.PATIENTNR].append(Diagnosis(Disease(str(d.SPECIALISM), str(d.HOOFDDIAG),
                                                         description=str(d.OMSCHRIJV)),
-                                                d.BEGINDAT, d.EINDDAT))
+                                                d.BEGINDAT, d.EINDDAT, practitioner=d.UITVOERDER))
 
     return merge_overlapping_diagnoses(diagnoses)
 
@@ -41,18 +42,20 @@ def remove_overlap(diagnoses):
     result = []
     current_start = datetime.date(1, 1, 1)
     current_stop = datetime.date(1, 1, 1)
+    prev = None
 
     for diag in sorted(diagnoses):
         start = diag.start_date
         stop = diag.end_date
 
-        if start - datetime.timedelta(days=1) > current_stop:
+        if (prev and prev.practitioner != diag.practitioner) or start - datetime.timedelta(days=1) > current_stop:
             result.append(diag)
             current_start, current_stop = start, stop
         else:
-            result[-1] = Diagnosis(diag.disease, current_start, stop)
+            result[-1] = Diagnosis(diag.disease, current_start, stop, practitioner=diag.practitioner)
             current_stop = max(current_stop, stop)
 
+        prev = diag
     return result
 
 
