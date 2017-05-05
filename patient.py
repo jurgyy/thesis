@@ -15,6 +15,8 @@ class Patient:
         self.chads_vasc_changes = []
         self.strokes = []
 
+        self.medications = {}
+
     def __repr__(self):
         return "({}, {}, {}, {}\nDiseases: {})".format(self.number, self.sex, self.birth_date, self.death_date,
                                                        self.diagnoses)
@@ -149,6 +151,18 @@ class Patient:
                 timestamps.append(d.start_date)
 
         self.strokes = timestamps
+
+    def add_medications(self, medications):
+        for m in medications:
+            if m.code not in self.medications:
+                self.medications[m.code] = []
+            self.medications[m.code].append(m)
+
+    def had_medication(self, medication_code, start_date, end_date):
+        for m in self.medications[medication_code]:
+            if start_date <= m.start_date <= end_date or start_date <= m.end_date <= end_date:
+                return True
+        return False
 
 
 class ChadsVascChangeEvent:

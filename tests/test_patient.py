@@ -4,12 +4,38 @@ from unittest import TestCase, main
 from diagnosis import Diagnosis
 from disease_groups import *
 from main import *
+from medication import Medication
 from patient import Patient
 from patient import ChadsVascChangeEvent as CVCE
 from disease import Disease
 
 
 class TestPatient(TestCase):
+    patient = Patient(1, 'm', d(1970, 6, 6), d(2008, 10, 5))
+
+    def test_calculate_age(self):
+        self.assertEqual(self.patient.calculate_age(d(1980, 5, 5)), 9)
+        self.assertEqual(self.patient.calculate_age(d(1980, 5, 6)), 9)
+        self.assertEqual(self.patient.calculate_age(d(1980, 5, 7)), 9)
+        self.assertEqual(self.patient.calculate_age(d(1980, 6, 5)), 9)
+        self.assertEqual(self.patient.calculate_age(d(1980, 6, 6)), 10)
+        self.assertEqual(self.patient.calculate_age(d(1980, 6, 7)), 10)
+        self.assertEqual(self.patient.calculate_age(d(1980, 7, 5)), 10)
+        self.assertEqual(self.patient.calculate_age(d(1980, 7, 6)), 10)
+        self.assertEqual(self.patient.calculate_age(d(1980, 7, 7)), 10)
+
+    def test_is_alive(self):
+        self.assertFalse(self.patient.is_alive(d(1970, 6, 5)))
+        self.assertTrue(self.patient.is_alive(d(1970, 6, 6)))
+        self.assertTrue(self.patient.is_alive(d(2008, 10, 4)))
+        self.assertFalse(self.patient.is_alive(d(2008, 10, 5)))
+
+    def test_is_female(self):
+        self.assertFalse(Patient(1, 'm', d(1970, 6, 6), d(2008, 10, 5)).is_female())
+        self.assertTrue(Patient(1, 'v', d(1970, 6, 6), d(2008, 10, 5)).is_female())
+
+
+class TestPatientDiseases(TestCase):
     patient = Patient(1, 'm', d(1970, 6, 6), d(2008, 10, 5))
 
     diagnoses = [Diagnosis(Disease("TEST", "1"), d(2005, 1, 1), d(2005, 12, 31)),
@@ -46,27 +72,6 @@ class TestPatient(TestCase):
         self.assertEqual(self.patient.days_since_diagnosis(Disease("TEST", "1"), d(2005, 12, 31)), 364)
         self.assertEqual(self.patient.days_since_diagnosis(Disease("TEST", "1"), d(2006, 1, 1)), 0)
         self.assertEqual(self.patient.days_since_diagnosis(Disease("TEST", "1"), d(2007, 2, 1)), 396)
-
-    def test_calculate_age(self):
-        self.assertEqual(self.patient.calculate_age(d(1980, 5, 5)), 9)
-        self.assertEqual(self.patient.calculate_age(d(1980, 5, 6)), 9)
-        self.assertEqual(self.patient.calculate_age(d(1980, 5, 7)), 9)
-        self.assertEqual(self.patient.calculate_age(d(1980, 6, 5)), 9)
-        self.assertEqual(self.patient.calculate_age(d(1980, 6, 6)), 10)
-        self.assertEqual(self.patient.calculate_age(d(1980, 6, 7)), 10)
-        self.assertEqual(self.patient.calculate_age(d(1980, 7, 5)), 10)
-        self.assertEqual(self.patient.calculate_age(d(1980, 7, 6)), 10)
-        self.assertEqual(self.patient.calculate_age(d(1980, 7, 7)), 10)
-
-    def test_is_alive(self):
-        self.assertFalse(self.patient.is_alive(d(1970, 6, 5)))
-        self.assertTrue(self.patient.is_alive(d(1970, 6, 6)))
-        self.assertTrue(self.patient.is_alive(d(2008, 10, 4)))
-        self.assertFalse(self.patient.is_alive(d(2008, 10, 5)))
-
-    def test_is_female(self):
-        self.assertFalse(Patient(1, 'm', d(1970, 6, 6), d(2008, 10, 5)).is_female())
-        self.assertTrue(Patient(1, 'v', d(1970, 6, 6), d(2008, 10, 5)).is_female())
 
     def test_days_since_last_diagnosis(self):
         self.assertEqual(self.patient.days_since_last_diagnosis(d(2006, 1, 1)), 0)
@@ -135,6 +140,25 @@ class TestChadsVasc(TestCase):
 
         self.assertEqual(self.patient_male.strokes, expected_strokes)
         self.assertEqual(self.patient_female.strokes, expected_strokes)
+
+
+class TestPatientMedication(TestCase):
+    patient = Patient(1, 'm', d(1970, 6, 6), d(2016, 10, 5))
+
+    medications = [Medication("A00AA00", d(2010, 1, 1), d(2010, 1, 1)),
+                   Medication("B00BB01", d(2010, 6, 1), d(2010, 6, 7)),
+                   Medication("B00BB01", d(2010, 8, 1), d(2010, 8, 7)),
+                   Medication("B00BB02", d(2010, 7, 1), d(2010, 8, 1))]
+
+    patient.add_medications(medications)
+
+    def test_add_medications(self):
+        self.assertEqual(self.patient.medications,
+                         {m.code: [n for n in self.medications if n.code is m.code] for m in self.medications})
+
+    def test_had_medication(self):
+        self.assertTrue(self.patient.had_medication("A00AA00", d(2010, 1, 1), d(2010, 1, 31)))
+        self.assertFalse(self.patient.had_medication("B00BB01", d(2010, 1, 1), d(2010, 1, 31)))
 
 
 if __name__ == '__main__':
