@@ -150,7 +150,8 @@ class TestPatientMedication(TestCase):
                    Medication("B00BB01", d(2010, 8, 1), d(2010, 8, 7)),
                    Medication("B00BB02", d(2010, 7, 1), d(2010, 8, 1))]
 
-    patient.add_medications(medications)
+    for m in medications:
+        patient.add_medication(m)
 
     def test_add_medications(self):
         self.assertEqual(self.patient.medications,
