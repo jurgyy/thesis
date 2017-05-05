@@ -8,11 +8,11 @@ def get_patients(loc):
     converters = {'GEBDAT': lambda x: convert_to_date(x),
                   'OVERLDAT': lambda x: convert_to_date(x)}
     dataframe = pd.read_csv(loc, sep='\t', converters=converters)
-    # Fields: PATIENTNR	VOORLETTER	ACHTERNAAM	GESLACHT	GEBDAT	OVERLEDEN	OVERLDAT	hasAC
+    # Fields: PATIENTNR	GESLACHT	GEBDAT	OVERLEDEN	OVERLDAT
 
     patients = {}
 
     for p in dataframe.itertuples():
-        patients[p.PATIENTNR] = (Patient(p.PATIENTNR, p.GESLACHT, p.GEBDAT, p.OVERLDAT))
+        patients[p.PATIENTNR] = (Patient(p.PATIENTNR, p.GESLACHT.lower(), p.GEBDAT, p.OVERLDAT))
 
     return patients
