@@ -10,6 +10,7 @@ from dateutil.relativedelta import relativedelta
 
 import anticoagulant_decision
 from csv_reader.diagnose_csv import get_diagnoses
+from csv_reader.medication_csv import get_medications
 from csv_reader.patients_csv import get_patients
 from disease import Disease
 from disease_groups import stroke_diseases, atrial_fib
@@ -20,6 +21,12 @@ def add_diseases(patients, diagnoses):
     for patient_nr, diagnoses in diagnoses.items():
         for diagnosis in diagnoses:
             patients[patient_nr].add_diagnosis(diagnosis)
+
+
+def add_medications(patients, medications):
+    for patient_nr, medication in medications.items():
+        for m in medication:
+            patients[patient_nr].add_medication(m)
 
 
 def add_feature_slice(data, diseases, patient, sim_date):
@@ -180,8 +187,10 @@ def main(cache=False):
         print("Loading Data...")
         patients = get_patients("data/msc_test/patients_general.csv")
         diagnoses = get_diagnoses("data/msc_test/patients_diseases.csv")
+        medications = get_medications("data/msc_test/patient_meds")
 
         add_diseases(patients, diagnoses)
+        add_medications(patients, medications)
 
         diseases = get_all_diseases(diagnoses)
         diseases = reduce_feature_space(diseases, diagnoses, min_frequency=10)
@@ -192,7 +201,8 @@ def main(cache=False):
             p.find_chads_vasc_changes()
 
         start_date = datetime.date(2005, 1, 1)
-        end_date = datetime.date(2012, 7, 1)
+        # end_date = datetime.date(2012, 7, 1)
+        end_date = datetime.date(2007, 7, 1)
 
         chads_vasc = simulate_chads_vasc(patients, start_date, end_date)
         learn, test = simulate_predictor(patients, diseases, start_date, end_date, write_output=False)
@@ -201,11 +211,19 @@ def main(cache=False):
     cf_chads_vasc = analyze_chads_vasc(chads_vasc)
 
     print("Predicting...")
-    cf_prediction = predict(learn, test)
+    cf_prediction = predict(learn, test, plot=True)
 
     cf_chads_vasc.dump()
     cf_prediction.dump()
 
 
 if __name__ == "__main__":
+    """"
+     CDSS influence
+     Goal: Difference in meds comparing different practitioners and CHADS-VASc score
+     Requirements:
+      - DBCs with practitioner
+      - AF meds prescriptions
+     
+    """
     main(cache=False)

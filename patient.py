@@ -152,11 +152,10 @@ class Patient:
 
         self.strokes = timestamps
 
-    def add_medications(self, medications):
-        for m in medications:
-            if m.code not in self.medications:
-                self.medications[m.code] = []
-            self.medications[m.code].append(m)
+    def add_medication(self, medication):
+        if medication.code not in self.medications:
+            self.medications[medication.code] = []
+        self.medications[medication.code].append(medication)
 
     def had_medication(self, medication_code, start_date, end_date):
         for m in self.medications[medication_code]:
