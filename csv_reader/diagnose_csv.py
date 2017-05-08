@@ -7,6 +7,11 @@ from disease import Disease
 from csv_reader.reader import convert_to_date
 
 
+def dbc_end_date(x):
+    print("!", x, type(x))
+    return x + pd.Timedelta(days=120) if x >= pd.datetime(2015, 1, 1, 0, 0, 0).date() else x + pd.Timedelta(days=365)
+
+
 def get_diagnoses(loc):
     converters = {'HOOFDDIAG': lambda x: str(x),
                   'UITVOERDER': lambda x: str(x),
@@ -14,8 +19,9 @@ def get_diagnoses(loc):
     dataframe = pd.read_csv(loc, sep='\t', converters=converters)
     # Fields: PATIENTNR	SPECIALISM	HOOFDDIAG	OMSCHRIJV	UITVOERDER	BEGINDAT	EINDDAT
 
-    dataframe['EINDDAT'] = dataframe['EINDDAT'].fillna(dataframe['BEGINDAT'] + pd.Timedelta(days=365))
-    # TODO: 365 vs 120 days when EINDAT is null
+    # Before 2015 DBCs were allowed to be as long as one year, after that only 120 days
+    dataframe['EINDDAT'] = dataframe['EINDDAT'].fillna(dataframe['BEGINDAT']) # TODO!
+
     dataframe['EINDDAT'] = dataframe['EINDDAT'].apply(convert_to_date)
 
     diagnoses = {}
