@@ -7,6 +7,7 @@ from disease import Disease
 # Neurologie    NEU     21
 # Geriatrie     GER     33
 
+# TODO: Check the final diagnoses list for all possible diseases
 chads_vasc_c = [Disease("CAR", "302"),
                 Disease("GER", "262")]
 chads_vasc_h = [Disease("7", "901"),

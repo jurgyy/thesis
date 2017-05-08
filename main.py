@@ -30,7 +30,6 @@ def add_medications(patients, medications):
 
 
 def add_feature_slice(data, diseases, patient, sim_date):
-    # TODO: Somehow not include strokes as actual features
     feature_vector = [1 if patient.has_disease(d, sim_date, chronic=True) else 0 for d in diseases]
     feature_vector += [patient.days_since_diagnosis(d, sim_date) if feature_vector[i] else 0
                        for i, d in enumerate(diseases)]
@@ -42,6 +41,7 @@ def add_feature_slice(data, diseases, patient, sim_date):
     data["Target"].append(patient.should_have_AC(sim_date, anticoagulant_decision.future_stroke,
                                                  {"months": 12}))
 
+    # TODO: Something goes wrong with the label
     # TODO: would be more efficient if adding labels could be done before the simulation
     if len(data["Data Labels"]) < len(feature_vector):
         data["Data Labels"] = [str(d) for d in diseases]
@@ -184,13 +184,14 @@ def main(cache=False):
 
         chads_vasc = read("output/vasc_data.json")
     else:
+        # TODO: Filter patients with AC meds because the skew the results
         print("Loading Data...")
         patients = get_patients("data/msc_test/patients_general.csv")
         diagnoses = get_diagnoses("data/msc_test/patients_diseases.csv")
-        medications = get_medications("data/msc_test/patient_meds")
+        # medications = get_medications("data/msc_test/patient_meds")
 
         add_diseases(patients, diagnoses)
-        add_medications(patients, medications)
+        # add_medications(patients, medications)
 
         diseases = get_all_diseases(diagnoses)
         diseases = reduce_feature_space(diseases, diagnoses, min_frequency=10)
@@ -205,6 +206,7 @@ def main(cache=False):
         end_date = datetime.date(2007, 7, 1)
 
         chads_vasc = simulate_chads_vasc(patients, start_date, end_date)
+        # TODO: Find the true adjusted stroke rate
         learn, test = simulate_predictor(patients, diseases, start_date, end_date, write_output=False)
 
     print("CHADS-VASc...")
