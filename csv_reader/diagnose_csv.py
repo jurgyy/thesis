@@ -22,9 +22,12 @@ def get_diagnoses(loc):
     for d in dataframe.itertuples():
         if d.PATIENTNR not in diagnoses:
             diagnoses[d.PATIENTNR] = []
-        diagnoses[d.PATIENTNR].append(Diagnosis(Disease(str(d.SPECIALISM), str(d.HOOFDDIAG),
+        diagnoses[d.PATIENTNR].append(Diagnosis(Disease(str(d.SPECIALISM),
+                                                        str(d.HOOFDDIAG),
                                                         description=str(d.OMSCHRIJV)),
-                                                d.BEGINDAT, d.EINDDAT, practitioner=d.UITVOERDER))
+                                                d.BEGINDAT,
+                                                d.EINDDAT,
+                                                practitioner=str(d.UITVOERDER)))
 
     return merge_overlapping_diagnoses(diagnoses)
 
