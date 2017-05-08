@@ -41,12 +41,12 @@ class TestCsvReaders(TestCase):
         })
 
     def test_get_medications(self):
-        self.assertEqual(self.medications, {5: [Medication("A00AA00", d(2010, 1, 1), d(2010, 1, 1)),
+        self.assertEqual(self.medications, {5: [Medication("A00AA00", d(2010, 1, 1), d(datetime.MAXYEAR, 12, 31)),
                                                 Medication("B00BB01", d(2010, 6, 1), d(2010, 6, 7)),
                                                 Medication("B00BB02", d(2010, 7, 1), d(2010, 8, 1)),
                                                 Medication("B00BB01", d(2010, 8, 1), d(2011, 8, 1)),
                                                 Medication("A00AA04", d(2010, 10, 31), d(2010, 11, 21)),
-                                                Medication("A00AA10", d(2010, 12, 31), d(2010, 12, 31))],
+                                                Medication("A00AA10", d(2010, 12, 31), d(datetime.MAXYEAR, 12, 31))],
                                             123: [Medication("A00AA00", d(2010, 1, 1), d(2011, 1, 1)),
                                                   Medication("B00BB02", d(2010, 6, 16), d(2010, 7, 16))]})
 

@@ -8,7 +8,6 @@ def get_medications(loc):
     converters = {'VRSCHRDAT': lambda x: convert_to_date(x)}
     dataframe = pd.read_csv(loc, sep='\t', converters=converters)
     
-    dataframe['ACTSTOPDT'] = dataframe['ACTSTOPDT'].fillna(dataframe['VRSCHRDAT'])
     dataframe['ACTSTOPDT'] = dataframe['ACTSTOPDT'].apply(convert_to_date)
 
     medications = {}
