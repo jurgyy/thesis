@@ -15,6 +15,7 @@ def get_diagnoses(loc):
     # Fields: PATIENTNR	SPECIALISM	HOOFDDIAG	OMSCHRIJV	UITVOERDER	BEGINDAT	EINDDAT
 
     dataframe['EINDDAT'] = dataframe['EINDDAT'].fillna(dataframe['BEGINDAT'] + pd.Timedelta(days=365))
+    # TODO: 365 vs 120 days when EINDAT is null
     dataframe['EINDDAT'] = dataframe['EINDDAT'].apply(convert_to_date)
 
     diagnoses = {}
@@ -52,8 +53,8 @@ def remove_overlap(diagnoses):
             result.append(diag)
             current_start, current_stop = start, stop
         else:
-            result[-1] = Diagnosis(diag.disease, current_start, stop, practitioner=diag.practitioner)
             current_stop = max(current_stop, stop)
+            result[-1] = Diagnosis(diag.disease, current_start, current_stop, practitioner=diag.practitioner)
 
         prev = diag
     return result
