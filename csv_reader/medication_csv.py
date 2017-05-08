@@ -17,3 +17,4 @@ def get_medications(loc):
         medications[m.PATIENTNR].append(Medication(m.ATCCODE, m.VRSCHRDAT, m.ACTSTOPDT))
 
     return medications
+    # TODO: remove duplicates like diagnoses

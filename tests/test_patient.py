@@ -158,8 +158,9 @@ class TestPatientMedication(TestCase):
                          {m.code: [n for n in self.medications if n.code is m.code] for m in self.medications})
 
     def test_had_medication(self):
-        self.assertTrue(self.patient.had_medication("A00AA00", d(2010, 1, 1), d(2010, 1, 31)))
-        self.assertFalse(self.patient.had_medication("B00BB01", d(2010, 1, 1), d(2010, 1, 31)))
+        self.assertTrue(self.patient.has_medication("A00AA00", d(2010, 1, 1)))
+        self.assertTrue(self.patient.has_medication("B00BB01", d(2010, 6, 3)))
+        self.assertFalse(self.patient.has_medication("B00BB01", d(2010, 1, 1)))
 
 
 if __name__ == '__main__':

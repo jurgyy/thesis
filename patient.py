@@ -157,10 +157,19 @@ class Patient:
             self.medications[medication.code] = []
         self.medications[medication.code].append(medication)
 
-    def had_medication(self, medication_code, start_date, end_date):
+    def has_medication(self, medication_code, sim_date):
         for m in self.medications[medication_code]:
-            if start_date <= m.start_date <= end_date or start_date <= m.end_date <= end_date:
+            if m.start_date <= sim_date <= m.end_date:
                 return True
+        return False
+
+    def has_medication_group(self, group, sim_date):
+        for g in group:
+            if g not in self.medications:
+                continue
+            for m in self.medications[g]:
+                if self.has_medication(m.code, sim_date):
+                    return True
         return False
 
 

@@ -15,6 +15,7 @@ from csv_reader.patients_csv import get_patients
 from disease import Disease
 from disease_groups import stroke_diseases, atrial_fib
 from learning.predictor import predict, analyze_chads_vasc
+from medication_groups import anti_coagulants
 
 
 def add_diseases(patients, diagnoses):
@@ -41,7 +42,6 @@ def add_feature_slice(data, diseases, patient, sim_date):
     data["Target"].append(patient.should_have_AC(sim_date, anticoagulant_decision.future_stroke,
                                                  {"months": 12}))
 
-    # TODO: Something goes wrong with the label
     # TODO: would be more efficient if adding labels could be done before the simulation
     if len(data["Data Labels"]) < len(feature_vector):
         data["Data Labels"] = [str(d) for d in diseases]
@@ -130,7 +130,8 @@ def simulate_predictor(patients, diseases, start, end, write_output=False):
         for key, patient in patients.items():
             if (not patient.is_alive(sim_date)) or \
                     (not patient.has_disease_group(atrial_fib, sim_date, chronic=True)) or \
-                    (patient.days_since_last_diagnosis(sim_date) > 366):
+                    (patient.days_since_last_diagnosis(sim_date) > 366) or \
+                    patient.has_medication_group(anti_coagulants, sim_date):
                 continue
 
             if key in test_data["Patients"]:
@@ -160,7 +161,8 @@ def simulate_chads_vasc(patients, start, end, write_output=False):
         print(sim_date)
         for key, patient in patients.items():
             if (not patient.is_alive(sim_date)) or \
-                    (not patient.has_disease_group(atrial_fib, sim_date, chronic=True)):
+                    (not patient.has_disease_group(atrial_fib, sim_date, chronic=True)) or \
+                    patient.has_medication_group(anti_coagulants, sim_date):
                 continue
 
             data["Data"].append(1 if patient.should_have_AC(sim_date, anticoagulant_decision.event_based) else 0)
@@ -184,17 +186,17 @@ def main(cache=False):
 
         chads_vasc = read("output/vasc_data.json")
     else:
-        # TODO: Filter patients with AC meds because the skew the results
         print("Loading Data...")
         patients = get_patients("data/msc_test/patients_general.csv")
         diagnoses = get_diagnoses("data/msc_test/patients_diseases.csv")
-        # medications = get_medications("data/msc_test/patient_meds")
+        medications = get_medications("data/msc_test/patient_meds.csv")
 
         add_diseases(patients, diagnoses)
-        # add_medications(patients, medications)
+        add_medications(patients, medications)
 
         diseases = get_all_diseases(diagnoses)
         diseases = reduce_feature_space(diseases, diagnoses, min_frequency=10)
+
         # plot_disease_frequency(diseases, diagnoses)
 
         for k, p in patients.items():
@@ -202,7 +204,7 @@ def main(cache=False):
             p.find_chads_vasc_changes()
 
         start_date = datetime.date(2005, 1, 1)
-        # end_date = datetime.date(2012, 7, 1)
+        # end_date = datetime.date(2015, 6, 1)
         end_date = datetime.date(2007, 7, 1)
 
         chads_vasc = simulate_chads_vasc(patients, start_date, end_date)
@@ -213,7 +215,7 @@ def main(cache=False):
     cf_chads_vasc = analyze_chads_vasc(chads_vasc)
 
     print("Predicting...")
-    cf_prediction = predict(learn, test, plot=True)
+    cf_prediction = predict(learn, test, plot=False)
 
     cf_chads_vasc.dump()
     cf_prediction.dump()
