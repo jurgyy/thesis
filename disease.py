@@ -14,3 +14,6 @@ class Disease:
 
     def __hash__(self):
         return hash((self.spec, self.diag))
+
+    def dump(self):
+        print(self.spec, self.diag, self.description)
