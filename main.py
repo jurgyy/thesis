@@ -116,7 +116,7 @@ def get_random_subset(patients, test_rate=0.30):
     return np.array(patient_nrs[0:test_size]).tolist()
 
 
-def simulate_predictor(patients, diseases, start, end, write_output=False):
+def simulate_predictor(patients, diseases, start, end):
     sim_date = start
 
     start = timeit.default_timer()
@@ -144,15 +144,10 @@ def simulate_predictor(patients, diseases, start, end, write_output=False):
     stop = timeit.default_timer()
     print("Time elapsed: {}".format(stop - start))
 
-    if write_output:
-        print("Writing output file...")
-        write("output/learn_data.json", learn_data)
-        write("output/test_data.json", test_data)
-
     return learn_data, test_data
 
 
-def simulate_chads_vasc(patients, start, end, write_output=False):
+def simulate_chads_vasc(patients, start, end):
     sim_date = start
 
     print("Simulating...\nStart Date: {}\nEnd Date: {}".format(sim_date, end))
@@ -171,45 +166,34 @@ def simulate_chads_vasc(patients, start, end, write_output=False):
 
         sim_date += relativedelta(months=+1)
 
-    if write_output:
-        print("Writing output file...")
-        write("output/chads-vasc_data.json", data)
-
     return data
 
 
-def main(cache=False):
-    if cache:
-        print("Reading...")
-        learn = read("output/learn_data.json")
-        test = read("output/test_data.json")
+def main():
+    print("Reading CSV files Data...")
+    patients = get_patients("data/msc_test/patients_general.csv")
+    diagnoses = get_diagnoses("data/msc_test/patients_diseases.csv")
+    medications = get_medications("data/msc_test/patient_meds.csv")
 
-        chads_vasc = read("output/vasc_data.json")
-    else:
-        print("Loading Data...")
-        patients = get_patients("data/msc_test/patients_general.csv")
-        diagnoses = get_diagnoses("data/msc_test/patients_diseases.csv")
-        medications = get_medications("data/msc_test/patient_meds.csv")
+    add_diseases(patients, diagnoses)
+    add_medications(patients, medications)
 
-        add_diseases(patients, diagnoses)
-        add_medications(patients, medications)
+    diseases = get_all_diseases(diagnoses)
+    diseases = reduce_feature_space(diseases, diagnoses, min_frequency=10)
 
-        diseases = get_all_diseases(diagnoses)
-        diseases = reduce_feature_space(diseases, diagnoses, min_frequency=10)
+    # plot_disease_frequency(diseases, diagnoses)
 
-        # plot_disease_frequency(diseases, diagnoses)
+    for k, p in patients.items():
+        p.find_strokes()
+        p.find_chads_vasc_changes()
 
-        for k, p in patients.items():
-            p.find_strokes()
-            p.find_chads_vasc_changes()
+    start_date = datetime.date(2005, 1, 1)
+    # end_date = datetime.date(2015, 6, 1)
+    end_date = datetime.date(2007, 7, 1)
 
-        start_date = datetime.date(2005, 1, 1)
-        # end_date = datetime.date(2015, 6, 1)
-        end_date = datetime.date(2007, 7, 1)
-
-        chads_vasc = simulate_chads_vasc(patients, start_date, end_date)
-        # TODO: Find the true adjusted stroke rate
-        learn, test = simulate_predictor(patients, diseases, start_date, end_date, write_output=False)
+    chads_vasc = simulate_chads_vasc(patients, start_date, end_date)
+    # TODO: Find the true adjusted stroke rate
+    learn, test = simulate_predictor(patients, diseases, start_date, end_date)
 
     print("CHADS-VASc...")
     cf_chads_vasc = analyze_chads_vasc(chads_vasc)
@@ -230,4 +214,4 @@ if __name__ == "__main__":
       - AF meds prescriptions
      
     """
-    main(cache=False)
+    main()
