@@ -19,7 +19,7 @@ class Patient:
 
     def __repr__(self):
         return "({}, {}, {}, {}\nDiseases: {})".format(self.number, self.sex, self.birth_date, self.death_date,
-                                                       self.diagnoses)
+                                                       len(self.diagnoses.keys()))
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from csv_reader.diagnose_csv import get_diagnoses
 from csv_reader.medication_csv import get_medications
 from csv_reader.patients_csv import get_patients
+from practitioner import analyze_practitioners
 from simulations import compare_predictor_chads_vasc
 
 
@@ -78,10 +79,6 @@ def write(loc, data):
         json.dump(data, f)
 
 
-def analyze_practitioners():
-    pass
-
-
 def prepare_data():
     print("Reading CSV files...")
     patients = get_patients("data/msc_test/patients_general.csv")
@@ -95,14 +92,15 @@ def prepare_data():
     diseases = reduce_feature_space(diseases, diagnoses, min_frequency=10)
 
     # plot_disease_frequency(diseases, diagnoses)
-    return patients, diseases
+    return patients, diagnoses, diseases
 
 
 def main():
-    patients, diseases = prepare_data()
+    patients, diagnoses, diseases = prepare_data()
 
-    compare_predictor_chads_vasc(patients, diseases)
-    analyze_practitioners()
+    # compare_predictor_chads_vasc(patients, diseases)
+    analyze_practitioners(patients)
+
 
 if __name__ == "__main__":
     main()
