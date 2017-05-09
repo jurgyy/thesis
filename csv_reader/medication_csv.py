@@ -9,6 +9,7 @@ def get_medications(loc):
     dataframe = pd.read_csv(loc, sep='\t', converters=converters)
     
     dataframe['ACTSTOPDT'] = dataframe['ACTSTOPDT'].apply(convert_to_date)
+    dataframe['ATCCODE'] = dataframe['ATCCODE'].fillna('0000000')
 
     medications = {}
     for m in dataframe.itertuples():

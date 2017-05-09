@@ -49,7 +49,8 @@ class TestCsvReaders(TestCase):
                                                 Medication("A00AA04", d(2010, 10, 31), d(2010, 11, 21)),
                                                 Medication("A00AA10", d(2010, 12, 31), d(datetime.MAXYEAR, 12, 31))],
                                             123: [Medication("A00AA00", d(2010, 1, 1), d(2011, 1, 1)),
-                                                  Medication("B00BB02", d(2010, 6, 16), d(2010, 7, 16))]})
+                                                  Medication("B00BB02", d(2010, 6, 16), d(2010, 7, 16)),
+                                                  Medication("0000000", d(2010, 12, 31), d(datetime.MAXYEAR, 12, 31))]})
 
 
 if __name__ == "__main__":
