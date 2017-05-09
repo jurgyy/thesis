@@ -160,7 +160,8 @@ def simulate_chads_vasc(patients, start, end):
                     patient.has_medication_group("B01", sim_date):  # Antithrombotic Agents start with B01
                 continue
 
-            data["Data"].append(1 if patient.should_have_AC(sim_date, anticoagulant_decision.event_based) else 0)
+            data["Data"].append(1 if patient.should_have_AC(sim_date, anticoagulant_decision.chads_vasc,
+                                                            {"max_value": 3}) else 0)
             data["Target"].append(1 if patient.should_have_AC(sim_date, anticoagulant_decision.future_stroke,
                                                               {"months": 12}) else 0)
 
@@ -170,7 +171,7 @@ def simulate_chads_vasc(patients, start, end):
 
 
 def main():
-    print("Reading CSV files Data...")
+    print("Reading CSV files...")
     patients = get_patients("data/msc_test/patients_general.csv")
     diagnoses = get_diagnoses("data/msc_test/patients_diseases.csv")
     medications = get_medications("data/msc_test/patient_meds.csv")
@@ -206,12 +207,4 @@ def main():
 
 
 if __name__ == "__main__":
-    """"
-     CDSS influence
-     Goal: Difference in meds comparing different practitioners and CHADS-VASc score
-     Requirements:
-      - DBCs with practitioner
-      - AF meds prescriptions
-     
-    """
     main()
