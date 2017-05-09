@@ -1,3 +1,4 @@
+import datetime
 from datetime import date as d
 from unittest import TestCase, main
 
@@ -5,6 +6,7 @@ from diagnosis import Diagnosis
 from main import *
 from patient import Patient
 from disease import Disease
+from simulations import get_random_subset
 
 
 class TestMainFunctions(TestCase):
