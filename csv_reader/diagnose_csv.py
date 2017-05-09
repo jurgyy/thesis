@@ -1,6 +1,7 @@
 import datetime
 
 import pandas as pd
+import numpy as np
 
 from diagnosis import Diagnosis
 from disease import Disease
@@ -8,8 +9,7 @@ from csv_reader.reader import convert_to_date
 
 
 def dbc_end_date(x):
-    print("!", x, type(x))
-    return x + pd.Timedelta(days=120) if x >= pd.datetime(2015, 1, 1, 0, 0, 0).date() else x + pd.Timedelta(days=365)
+    return x + pd.Timedelta(days=120) if x >= pd.datetime(2015, 1, 1).date() else x + pd.Timedelta(days=365)
 
 
 def get_diagnoses(loc):
@@ -20,8 +20,8 @@ def get_diagnoses(loc):
     # Fields: PATIENTNR	SPECIALISM	HOOFDDIAG	OMSCHRIJV	UITVOERDER	BEGINDAT	EINDDAT
 
     # Before 2015 DBCs were allowed to be as long as one year, after that only 120 days
-    dataframe['EINDDAT'] = dataframe['EINDDAT'].fillna(dataframe['BEGINDAT']) # TODO!
-
+    end_dates = dataframe['BEGINDAT'].apply(dbc_end_date)
+    dataframe['EINDDAT'] = dataframe['EINDDAT'].fillna(end_dates)
     dataframe['EINDDAT'] = dataframe['EINDDAT'].apply(convert_to_date)
 
     diagnoses = {}
