@@ -157,10 +157,15 @@ class TestPatientMedication(TestCase):
         self.assertEqual(self.patient.medications,
                          {m.code: [n for n in self.medications if n.code is m.code] for m in self.medications})
 
-    def test_had_medication(self):
+    def test_has_medication(self):
         self.assertTrue(self.patient.has_medication("A00AA00", d(2010, 1, 1)))
         self.assertTrue(self.patient.has_medication("B00BB01", d(2010, 6, 3)))
         self.assertFalse(self.patient.has_medication("B00BB01", d(2010, 1, 1)))
+
+    def test_has_medication_group(self):
+        self.assertFalse(self.patient.has_medication_group("A0", d(2009, 12, 31)))
+        self.assertTrue(self.patient.has_medication_group("A0", d(2010, 1, 1)))
+        self.assertFalse(self.patient.has_medication_group("A0", d(2010, 1, 2)))
 
 
 if __name__ == '__main__':

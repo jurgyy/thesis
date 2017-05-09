@@ -163,12 +163,13 @@ class Patient:
                 return True
         return False
 
-    def has_medication_group(self, group, sim_date):
-        for g in group:
-            if g not in self.medications:
+    def has_medication_group(self, starts_with, sim_date):
+        for code, medications in self.medications.items():
+            if not code.startswith(starts_with):
                 continue
-            for m in self.medications[g]:
-                if self.has_medication(m.code, sim_date):
+
+            for m in medications:
+                if m.start_date <= sim_date <= m.end_date:
                     return True
         return False
 

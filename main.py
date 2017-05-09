@@ -131,7 +131,7 @@ def simulate_predictor(patients, diseases, start, end, write_output=False):
             if (not patient.is_alive(sim_date)) or \
                     (not patient.has_disease_group(atrial_fib, sim_date, chronic=True)) or \
                     (patient.days_since_last_diagnosis(sim_date) > 366) or \
-                    patient.has_medication_group(anti_coagulants, sim_date):
+                    patient.has_medication_group("B01", sim_date):  # Antithrombotic Agents start with B01
                 continue
 
             if key in test_data["Patients"]:
@@ -162,7 +162,7 @@ def simulate_chads_vasc(patients, start, end, write_output=False):
         for key, patient in patients.items():
             if (not patient.is_alive(sim_date)) or \
                     (not patient.has_disease_group(atrial_fib, sim_date, chronic=True)) or \
-                    patient.has_medication_group(anti_coagulants, sim_date):
+                    patient.has_medication_group("B01", sim_date):  # Antithrombotic Agents start with B01
                 continue
 
             data["Data"].append(1 if patient.should_have_AC(sim_date, anticoagulant_decision.event_based) else 0)
