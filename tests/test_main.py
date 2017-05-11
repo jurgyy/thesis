@@ -58,5 +58,5 @@ class TestMainFunctions(TestCase):
             self.assertTrue(s in self.patients)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

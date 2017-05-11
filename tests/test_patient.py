@@ -168,5 +168,5 @@ class TestPatientMedication(TestCase):
         self.assertFalse(self.patient.has_medication_group("A0", d(2010, 1, 2)))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

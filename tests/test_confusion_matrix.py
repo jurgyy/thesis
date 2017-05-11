@@ -42,5 +42,5 @@ class TestConfusionMatrix(TestCase):
         self.assertEqual(self.cf.prevalence, total/self.cf.population)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
