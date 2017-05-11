@@ -1,3 +1,5 @@
+import datetime
+
 import numpy as np
 import json
 
@@ -16,6 +18,7 @@ def add_diseases(patients, diagnoses):
             patients[patient_nr].add_diagnosis(diagnosis)
 
 
+# TODO: write tests for medication
 def add_medications(patients, medications):
     for patient_nr, medication in medications.items():
         for m in medication:
@@ -99,7 +102,8 @@ def main():
     patients, diagnoses, diseases = prepare_data()
 
     # compare_predictor_chads_vasc(patients, diseases)
-    analyze_practitioners(patients)
+
+    analyze_practitioners(patients, datetime.date(2014, 1, 1), datetime.date(2015, 1, 1))
 
 
 if __name__ == "__main__":
