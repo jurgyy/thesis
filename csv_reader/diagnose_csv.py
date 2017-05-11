@@ -12,7 +12,7 @@ def dbc_end_date(x):
     return x + pd.Timedelta(days=120) if x >= pd.datetime(2015, 1, 1).date() else x + pd.Timedelta(days=365)
 
 
-def get_diagnoses(loc):
+def get_diagnoses(loc, merge=True):
     converters = {'HOOFDDIAG': lambda x: str(x),
                   'UITVOERDER': lambda x: str(x),
                   'BEGINDAT': lambda x: convert_to_date(x)}
@@ -35,7 +35,9 @@ def get_diagnoses(loc):
                                                 d.EINDDAT,
                                                 practitioner=str(d.UITVOERDER)))
 
-    return merge_overlapping_diagnoses(diagnoses)
+    if merge:
+        return merge_overlapping_diagnoses(diagnoses)
+    return diagnoses
 
 
 def group_diagnoses(diseases):
