@@ -1,5 +1,7 @@
+import pydot
 import matplotlib.pyplot as plt
 from sklearn import ensemble
+from sklearn.tree import export_graphviz
 
 from learning.confusion_matrix import ConfusionMatrix
 
@@ -16,8 +18,6 @@ def predict(learn_data, test_data, plot=False):
     print("# Test Data Size:  {}".format(len(test_data["Data"])))
     print("# Features:        {}".format(len(learn_data["Data"][0])))
 
-    # Max size is between 143.048.538 and 162.471.060 data points
-    # (39508 + 90773) * 1.098 (from 2005 - 2012.7) and (43.939 + 104.031) * 1.098 (from 2005 - 2013)
     clf.fit(learn_data["Data"], learn_data["Target"])
 
     predictions = clf.predict(test_data["Data"])
@@ -41,5 +41,14 @@ def predict(learn_data, test_data, plot=False):
         plt.title("Feature Importance")
         plt.yticks(xs, ls)
         plt.show()
+
+        print("Outputting first three trees")
+        for i in range(3):
+            export_graphviz(clf.estimators_[i],
+                            feature_names=learn_data["Data Labels"],
+                            filled=True,
+                            rounded=True)
+            (graph,) = pydot.graph_from_dot_file('tree.dot')
+            graph.write_png('output/tree_{}.png'.format(i), prog="graphviz/bin/dot.exe")
 
     return cf
