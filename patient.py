@@ -10,7 +10,7 @@ class Patient:
         self.birth_date = birth_date
         self.death_date = death_date
 
-        self.diagnoses = {}
+        self.diagnoses = DiagnosesDict({})
         self.last_diagnosis = None
         self.chads_vasc_changes = []
         self.strokes = []
@@ -37,10 +37,9 @@ class Patient:
 
     def get_current_diseases(self, timestamp):
         current_diseases = set()
-        for disease, diagnoses in self.diagnoses.items():
-            for diagnose in diagnoses:
-                if diagnose.start_date <= timestamp <= diagnose.end_date:
-                    current_diseases.add(diagnose.disease)
+        for diagnosis in self.diagnoses.iter_diagnoses():
+            if diagnosis.start_date <= timestamp <= diagnosis.end_date:
+                current_diseases.add(diagnosis.disease)
 
         return current_diseases
 
@@ -190,3 +189,10 @@ class ChadsVascChangeEvent:
 
     def __eq__(self, other):
         return self.date == other.date and self.score == other.score
+
+
+class DiagnosesDict(dict):
+    def iter_diagnoses(self):
+        for diagnoses in self.values():
+            for diagnosis in diagnoses:
+                yield diagnosis

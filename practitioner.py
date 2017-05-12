@@ -22,15 +22,14 @@ def get_practitioners(patients, spec=None):
     practitioners = set()
 
     for patient in patients.values():
-        for diagnoses in patient.diagnoses.values():
-            for diagnosis in diagnoses:
-                if not diagnosis.practitioner:
-                    continue
-                if spec is None:
-                    practitioners.add(diagnosis.practitioner)
-                    continue
-                if spec == diagnosis.disease.spec:
-                    practitioners.add(diagnosis.practitioner)
+        for diagnosis in patient.diagnoses.iter_diagnoses():
+            if not diagnosis.practitioner:
+                continue
+            if spec is None:
+                practitioners.add(diagnosis.practitioner)
+                continue
+            if spec == diagnosis.disease.spec:
+                practitioners.add(diagnosis.practitioner)
 
     return practitioners
 
@@ -44,9 +43,8 @@ def get_diagnosis_tuples(patients, disease=None):
             for diagnosis in patient.diagnoses[disease]:
                 tuples.append((patient, diagnosis))
         else:
-            for diagnoses in patient.diagnoses.values():
-                for diagnosis in diagnoses:
-                    tuples.append((patient, diagnosis))
+            for diagnosis in patient.diagnoses.iter_diagnoses():
+                tuples.append((patient, diagnosis))
 
     return tuples
 
