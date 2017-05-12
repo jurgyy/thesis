@@ -40,15 +40,16 @@ def predict(learn_data, test_data, plot=False):
         plt.barh(xs, importances)
         plt.title("Feature Importance")
         plt.yticks(xs, ls)
-        plt.show()
+        plt.savefig("output/feature_importance.png", bbox_inches='tight', dpi=100)
 
         print("Outputting first three trees")
         for i in range(3):
             export_graphviz(clf.estimators_[i],
                             feature_names=learn_data["Data Labels"],
                             filled=True,
-                            rounded=True)
-            (graph,) = pydot.graph_from_dot_file('tree.dot')
+                            rounded=True,
+                            out_file="output/tree.dot")
+            (graph,) = pydot.graph_from_dot_file('output/tree.dot')
             graph.write_png('output/tree_{}.png'.format(i), prog="graphviz/bin/dot.exe")
 
     return cf
