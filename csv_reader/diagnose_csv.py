@@ -36,27 +36,27 @@ def get_diagnoses(loc, merge=True):
                                                 practitioner=str(d.UITVOERDER)))
 
     if merge:
-        return merge_overlapping_diagnoses(diagnoses)
+        merge_overlapping_diagnoses(diagnoses)
     return diagnoses
 
 
-def group_diagnoses(diseases):
-    dct = {}
-    for d in diseases:
-        if d.disease not in dct:
-            dct[d.disease] = []
-        dct[d.disease].append(d)
+def group_diagnoses(diagnoses):
+    groups = {}
+    for d in diagnoses:
+        if d.disease not in groups:
+            groups[d.disease] = []
+        groups[d.disease].append(d)
 
-    return list(dct.values())
+    return list(groups.values())
 
 
-def remove_overlap(diagnoses):
+def remove_overlap(diagnosis_group):
     result = []
     current_start = datetime.date(1, 1, 1)
     current_stop = datetime.date(1, 1, 1)
     prev = None
 
-    for diag in sorted(diagnoses):
+    for diag in sorted(diagnosis_group):
         start = diag.start_date
         stop = diag.end_date
 
@@ -72,11 +72,9 @@ def remove_overlap(diagnoses):
 
 
 def merge_overlapping_diagnoses(diagnoses):
-    for patient_nr, ds in diagnoses.items():
+    for patient_nr, patient_diagnoses in diagnoses.items():
         continuous_diagnoses = []
 
-        for diagnosis_group in group_diagnoses(ds):
+        for diagnosis_group in group_diagnoses(patient_diagnoses):
             continuous_diagnoses += remove_overlap(diagnosis_group)
         diagnoses[patient_nr] = continuous_diagnoses
-
-    return diagnoses
