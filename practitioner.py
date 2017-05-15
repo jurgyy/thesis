@@ -140,8 +140,8 @@ class MedicationRate:
         total = np.array([])
         required = np.array([])
         for k in range(10):
-            np.append(required, [self.required[k]])
-            np.append(total, [self.total[k]])
+            total = np.append(total, [self.total[k]])
+            required = np.append(required, [self.required[k]])
 
         with np.errstate(divide='ignore', invalid='ignore'):
             return np.divide(required, total)

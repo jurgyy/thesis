@@ -2,6 +2,7 @@ from datetime import date as d
 import datetime
 from unittest import TestCase, main
 import numpy as np
+from collections import Counter
 
 from practitioner import *
 
@@ -15,6 +16,37 @@ from diagnosis import Diagnosis
 from medication import Medication
 from patient import Patient
 from disease import Disease
+
+
+class TestMedicationRate(TestCase):
+    rate = MedicationRate()
+    for i in range(10):
+        for j in range(i):
+            rate.update(i, j % 2 == 0)
+
+    def test_update(self):
+        self.assertEqual(self.rate.total,
+                         Counter({1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9}))
+
+        self.assertEqual(self.rate.required,
+                         Counter({1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 4, 8: 4, 9: 5}))
+
+    def test_get_rates(self):
+        self.assertTrue(np.allclose(self.rate.get_rates(),
+                                    np.array([float('nan'), 1, 0.5, 2/3, 0.5, 0.6, 0.5, 4/7, 0.5, 5/9]),
+                                    rtol=1e-05, atol=1e-08, equal_nan=True))
+
+    def test_get_count_threshold(self):
+        self.assertEqual(self.rate.get_count_threshold(0),
+                         (sum(self.rate.required.values()), sum(self.rate.total.values())))
+
+        self.assertEqual(self.rate.get_count_threshold(5), (19, 35))
+
+    def test_get_rate_threshold(self):
+        self.assertEqual(self.rate.get_rate_threshold(0),
+                         sum(self.rate.required.values()) / sum(self.rate.total.values()))
+
+        self.assertEqual(self.rate.get_rate_threshold(5), 19 / 35)
 
 
 class TestPractitionerAnalysis(TestCase):
