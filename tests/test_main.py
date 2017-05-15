@@ -4,6 +4,7 @@ from unittest import TestCase, main
 
 from diagnosis import Diagnosis
 from main import *
+from medication import Medication
 from patient import Patient
 from disease import Disease
 from simulations import get_random_subset
@@ -26,6 +27,15 @@ class TestMainFunctions(TestCase):
                  9: [Diagnosis(Disease("TEST", "1"), d(2005, 1, 1), d(2005, 12, 31)),
                      Diagnosis(Disease("TEST", "2"), d(2006, 1, 1), d(2006, 12, 31))]
                  }
+
+    medications = {2: [Medication("A00AA00", d(2004, 3, 1), d(2005, 3, 1)),
+                       Medication("A00AA00", d(2005, 3, 2), d(2006, 3, 3))],
+                   5: [Medication("A00AA00", d(2005, 3, 1), d(2005, 6, 1)),
+                       Medication("A00AA00", d(2006, 1, 1), d(2006, 3, 1))],
+                   7: [Medication("A00AA00", d(2005, 1, 1), d(2005, 3, 1)),
+                       Medication("B99BB99", d(2006, 1, 1), d(2006, 3, 1))],
+                   9: [Medication("A00AA00", d(2005, 1, 2), d(2006, 1, 1))]
+                   }
 
     def test_add_diseases(self):
         add_diseases(self.patients, self.diagnoses)
@@ -56,6 +66,20 @@ class TestMainFunctions(TestCase):
         self.assertEqual(len(subset), 2)
         for s in subset:
             self.assertTrue(s in self.patients)
+
+    def test_add_medication(self):
+        add_medications(self.patients, self.medications)
+        self.assertEqual(self.patients[2].medications,
+                         {"A00AA00": [Medication("A00AA00", d(2004, 3, 1), d(2005, 3, 1)),
+                                      Medication("A00AA00", d(2005, 3, 2), d(2006, 3, 3))]})
+        self.assertEqual(self.patients[5].medications,
+                         {"A00AA00": [Medication("A00AA00", d(2005, 3, 1), d(2005, 6, 1)),
+                                      Medication("A00AA00", d(2006, 1, 1), d(2006, 3, 1))]})
+        self.assertEqual(self.patients[7].medications,
+                         {"A00AA00": [Medication("A00AA00", d(2005, 1, 1), d(2005, 3, 1))],
+                          "B99BB99": [Medication("B99BB99", d(2006, 1, 1), d(2006, 3, 1))]})
+        self.assertEqual(self.patients[9].medications,
+                         {"A00AA00": [Medication("A00AA00", d(2005, 1, 2), d(2006, 1, 1))]})
 
 
 if __name__ == "__main__":
