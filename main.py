@@ -1,6 +1,5 @@
-import datetime
-
 import numpy as np
+import datetime
 import json
 
 import matplotlib.pyplot as plt
@@ -18,7 +17,6 @@ def add_diseases(patients, diagnoses):
             patients[patient_nr].add_diagnosis(diagnosis)
 
 
-# TODO: write tests for medication
 def add_medications(patients, medications):
     for patient_nr, medication in medications.items():
         for m in medication:
@@ -37,7 +35,7 @@ def get_all_diseases(diagnoses):
 def get_disease_frequency(diseases, diagnoses):
     frequency = {d: 0 for d in diseases}
 
-    for _, patient_diagnoses in diagnoses.items():
+    for patient_diagnoses in diagnoses.values():
         for diagnosis in patient_diagnoses:
             if diagnosis.disease not in frequency:
                 continue
@@ -101,9 +99,12 @@ def prepare_data():
 def main():
     patients, diagnoses, diseases = prepare_data()
 
-    # compare_predictor_chads_vasc(patients, diseases)
+    start = datetime.date(2005, 1, 1)
+    end = datetime.date(2015, 6, 1)
+    # end = datetime.date(2007, 7, 1)
 
-    analyze_practitioners(patients, datetime.date(2014, 1, 1), datetime.date(2015, 1, 1))
+    compare_predictor_chads_vasc(patients, diseases, start, end)
+    # analyze_practitioners(patients, start, end)
 
 
 if __name__ == "__main__":

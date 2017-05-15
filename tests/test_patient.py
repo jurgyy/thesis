@@ -1,14 +1,14 @@
 from datetime import date as d
 from unittest import TestCase, main
 
-import anticoagulant_decision
+from anticoagulant_decision import chads_vasc, event_based, future_stroke
 from diagnosis import Diagnosis
 from disease_groups import *
-from main import *
-from medication import Medication
+
 from patient import Patient
 from patient import ChadsVascChangeEvent as CVCE
 from disease import Disease
+from medication import Medication
 
 
 class TestPatient(TestCase):
@@ -172,7 +172,7 @@ class TestPatientMedication(TestCase):
 class TestPatientShouldHaveAC(TestCase):
     patient = Patient(1, 'm', d(1937, 5, 14), d(2017, 12, 31))
 
-    diagnoses = [  # Score | Disease
+    diagnoses = [                                                    # Score | Disease
         Diagnosis(chads_vasc_c[0], d(1980, 1, 1), d(1980, 12, 31)),  # 1     | Congestive heart failure
         Diagnosis(chads_vasc_h[0], d(1985, 1, 1), d(1985, 12, 31)),  # 2     | Hypertension
         Diagnosis(chads_vasc_s[0], d(1990, 1, 1), d(1990, 12, 31)),  # 4     | Stroke
@@ -187,46 +187,28 @@ class TestPatientShouldHaveAC(TestCase):
     patient.find_strokes()
 
     def test_method_chads_vasc(self):
-        self.assertFalse(self.patient.should_have_AC(d(1980, 1, 1), anticoagulant_decision.chads_vasc,
-                                                     {"max_value": 3}))
-        self.assertFalse(self.patient.should_have_AC(d(1985, 1, 1), anticoagulant_decision.chads_vasc,
-                                                     {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(1990, 1, 1), anticoagulant_decision.chads_vasc,
-                                                    {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(1995, 1, 1), anticoagulant_decision.chads_vasc,
-                                                    {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(2000, 1, 1), anticoagulant_decision.chads_vasc,
-                                                    {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(2005, 1, 1), anticoagulant_decision.chads_vasc,
-                                                    {"max_value": 3}))
+        self.assertFalse(self.patient.should_have_AC(d(1980, 1, 1), chads_vasc, {"max_value": 3}))
+        self.assertFalse(self.patient.should_have_AC(d(1985, 1, 1), chads_vasc, {"max_value": 3}))
+        self.assertTrue(self.patient.should_have_AC(d(1990, 1, 1), chads_vasc, {"max_value": 3}))
+        self.assertTrue(self.patient.should_have_AC(d(1995, 1, 1), chads_vasc, {"max_value": 3}))
+        self.assertTrue(self.patient.should_have_AC(d(2000, 1, 1), chads_vasc, {"max_value": 3}))
+        self.assertTrue(self.patient.should_have_AC(d(2005, 1, 1), chads_vasc, {"max_value": 3}))
 
     def test_method_event_based(self):
-        self.assertFalse(self.patient.should_have_AC(d(1980, 1, 1), anticoagulant_decision.event_based,
-                                                     {"max_value": 3}))
-        self.assertFalse(self.patient.should_have_AC(d(1985, 1, 1), anticoagulant_decision.event_based,
-                                                     {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(1990, 1, 1), anticoagulant_decision.event_based,
-                                                    {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(1995, 1, 1), anticoagulant_decision.event_based,
-                                                    {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(2000, 1, 1), anticoagulant_decision.event_based,
-                                                    {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(2005, 1, 1), anticoagulant_decision.event_based,
-                                                    {"max_value": 3}))
+        self.assertFalse(self.patient.should_have_AC(d(1980, 1, 1), event_based, {"max_value": 3}))
+        self.assertFalse(self.patient.should_have_AC(d(1985, 1, 1), event_based, {"max_value": 3}))
+        self.assertTrue(self.patient.should_have_AC(d(1990, 1, 1), event_based, {"max_value": 3}))
+        self.assertTrue(self.patient.should_have_AC(d(1995, 1, 1), event_based, {"max_value": 3}))
+        self.assertTrue(self.patient.should_have_AC(d(2000, 1, 1), event_based, {"max_value": 3}))
+        self.assertTrue(self.patient.should_have_AC(d(2005, 1, 1), event_based, {"max_value": 3}))
 
     def test_method_future_stroke(self):
-        self.assertFalse(self.patient.should_have_AC(d(1980, 1, 1), anticoagulant_decision.future_stroke,
-                                                     {"months": 12}))
-        self.assertFalse(self.patient.should_have_AC(d(1985, 1, 1), anticoagulant_decision.future_stroke,
-                                                     {"months": 12}))
-        self.assertTrue(self.patient.should_have_AC(d(1990, 1, 1), anticoagulant_decision.future_stroke,
-                                                    {"months": 12}))
-        self.assertFalse(self.patient.should_have_AC(d(1995, 1, 1), anticoagulant_decision.future_stroke,
-                                                     {"months": 12}))
-        self.assertFalse(self.patient.should_have_AC(d(2000, 1, 1), anticoagulant_decision.future_stroke,
-                                                     {"months": 12}))
-        self.assertTrue(self.patient.should_have_AC(d(2005, 1, 1), anticoagulant_decision.future_stroke,
-                                                    {"months": 12}))
+        self.assertFalse(self.patient.should_have_AC(d(1980, 1, 1), future_stroke, {"months": 12}))
+        self.assertFalse(self.patient.should_have_AC(d(1985, 1, 1), future_stroke, {"months": 12}))
+        self.assertTrue(self.patient.should_have_AC(d(1990, 1, 1), future_stroke, {"months": 12}))
+        self.assertFalse(self.patient.should_have_AC(d(1995, 1, 1), future_stroke, {"months": 12}))
+        self.assertFalse(self.patient.should_have_AC(d(2000, 1, 1), future_stroke, {"months": 12}))
+        self.assertTrue(self.patient.should_have_AC(d(2005, 1, 1), future_stroke, {"months": 12}))
 
 
 if __name__ == "__main__":

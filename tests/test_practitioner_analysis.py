@@ -4,7 +4,8 @@ from unittest import TestCase, main
 import numpy as np
 from collections import Counter
 
-from practitioner import *
+from practitioner import get_month_bins, get_practitioners, get_diagnosis_tuples, analyze_practitioners
+from practitioner import MedicationRate
 
 from csv_reader.diagnose_csv import get_diagnoses
 from csv_reader.medication_csv import get_medications
@@ -13,7 +14,6 @@ from csv_reader.patients_csv import get_patients
 from main import add_diseases, add_medications
 
 from diagnosis import Diagnosis
-from medication import Medication
 from patient import Patient
 from disease import Disease
 

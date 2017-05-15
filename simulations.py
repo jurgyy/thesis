@@ -1,12 +1,11 @@
 import numpy as np
-import datetime
 import timeit
 import random
 
 from dateutil.relativedelta import relativedelta
 
-import anticoagulant_decision
-from disease_groups import stroke_diseases, atrial_fib
+from anticoagulant_decision import future_stroke, chads_vasc
+from disease_groups import atrial_fib
 from learning.predictor import predict, analyze_chads_vasc
 
 
@@ -19,8 +18,7 @@ def add_feature_slice(data, diseases, patient, sim_date):
     feature_vector.append(patient.calculate_age(sim_date))
 
     data["Data"].append(feature_vector)
-    data["Target"].append(patient.should_have_AC(sim_date, anticoagulant_decision.future_stroke,
-                                                 {"months": 12}))
+    data["Target"].append(patient.should_have_AC(sim_date, future_stroke, {"months": 12}))
 
     # TODO: would be more efficient if adding labels could be done before the simulation
     if len(data["Data Labels"]) < len(feature_vector):
@@ -43,6 +41,11 @@ def patient_month_generator(start, end, patients):
     sim_date = start
     while sim_date < end:
         for key, patient in patients.items():
+            # Excluded patients are either:
+            #  - Not alive
+            #  - Don't have atrial fib (yet)
+            #  - Last diagnosis was more than a year ago
+            #  - Are receiving antithrombotic agents (this skews the results)
             if (not patient.is_alive(sim_date)) or \
                     (not patient.has_disease_group(atrial_fib, sim_date, chronic=True)) or \
                     (patient.days_since_last_diagnosis(sim_date) > 366) or \
@@ -76,28 +79,22 @@ def simulate_chads_vasc(patients, start, end):
     print("Simulating...\nStart Date: {}\nEnd Date: {}".format(start, end))
     data = {"Data": [], "Target": []}
     for key, patient, sim_date in patient_month_generator(start, end, patients):
-        data["Data"].append(1 if patient.should_have_AC(sim_date, anticoagulant_decision.chads_vasc,
-                                                        {"max_value": 3}) else 0)
-        data["Target"].append(1 if patient.should_have_AC(sim_date, anticoagulant_decision.future_stroke,
-                                                          {"months": 12}) else 0)
+        data["Data"].append(1 if patient.should_have_AC(sim_date, chads_vasc, {"max_value": 3}) else 0)
+        data["Target"].append(1 if patient.should_have_AC(sim_date, future_stroke, {"months": 12}) else 0)
     return data
 
 
-def compare_predictor_chads_vasc(patients, diseases):
+def compare_predictor_chads_vasc(patients, diseases, start, end):
     for k, p in patients.items():
         p.find_strokes()
         p.find_chads_vasc_changes()
 
-    start_date = datetime.date(2005, 1, 1)
-    # end_date = datetime.date(2015, 6, 1)
-    end_date = datetime.date(2007, 7, 1)
-
-    chads_vasc = simulate_chads_vasc(patients, start_date, end_date)
+    chads_vasc_data = simulate_chads_vasc(patients, start, end)
     # TODO: Find the true adjusted stroke rate
-    learn, test = simulate_predictor(patients, diseases, start_date, end_date)
+    learn, test = simulate_predictor(patients, diseases, start, end)
 
     print("CHADS-VASc...")
-    cf_chads_vasc = analyze_chads_vasc(chads_vasc)
+    cf_chads_vasc = analyze_chads_vasc(chads_vasc_data)
 
     print("Predicting...")
     cf_prediction = predict(learn, test, plot=True)

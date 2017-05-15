@@ -2,8 +2,8 @@ import datetime
 from datetime import date as d
 from unittest import TestCase, main
 
+from main import add_diseases, add_medications, get_all_diseases, get_disease_frequency, reduce_feature_space
 from diagnosis import Diagnosis
-from main import *
 from medication import Medication
 from patient import Patient
 from disease import Disease
