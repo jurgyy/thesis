@@ -7,7 +7,7 @@ def chads_vasc(patient, timestamp, max_value=3):
     return False
 
 
-def event_based(patient, timestamp):
+def event_based(patient, timestamp, max_value=3):
     if len(patient.chads_vasc_changes) == 0:
         return False
 
@@ -18,10 +18,10 @@ def event_based(patient, timestamp):
 
         tmp = e
 
-    return tmp.score >= 3
+    return tmp.score >= max_value
 
 
-def future_stroke(patient, timestamp, months=6):
+def future_stroke(patient, timestamp, months=12):
     for s in patient.strokes:
         if s <= timestamp <= s + relativedelta(months=+months):
             return True
