@@ -27,10 +27,12 @@ def add_feature_slice(data, diseases, patient, sim_date):
         data["Data Labels"] += ["Gender", "Age"]
 
 
-def get_random_subset(patients, test_rate=0.30):
+def get_random_subset(patients, test_rate=0.30, seed=None):
     patient_nrs = list(patients.keys())
     test_size = round(len(patient_nrs) * test_rate)
 
+    if seed:
+        random.seed(seed)
     random.shuffle(patient_nrs)
 
     # Workaround for np.int64 to native int conversion; perhaps there's a better way
@@ -39,8 +41,9 @@ def get_random_subset(patients, test_rate=0.30):
 
 def patient_month_generator(start, end, patients):
     sim_date = start
+    test_set = get_random_subset(patients, test_rate=.70)
     while sim_date < end:
-        for key, patient in patients.items():
+        for patient_nr, patient in patients.items():
             # Excluded patients are either:
             #  - Not alive
             #  - Don't have atrial fib (yet)
@@ -52,19 +55,19 @@ def patient_month_generator(start, end, patients):
                     patient.has_medication_group("B01", sim_date):  # Antithrombotic Agents start with B01
                 continue
 
-            yield key, patient, sim_date
+            yield patient, sim_date, patient_nr in test_set
 
         sim_date += relativedelta(months=+1)
 
 
 def simulate_predictor(patients, diseases, start, end):
     learn_data = {"Data": [], "Target": [], "Data Labels": []}
-    test_data = {"Data": [], "Target": [], "Data Labels": [], "Patients": get_random_subset(patients, test_rate=.70)}
+    test_data = {"Data": [], "Target": [], "Data Labels": []}
 
     start_timer = timeit.default_timer()
     print("Simulating...\nStart Date: {}\nEnd Date: {}".format(start, end))
-    for key, patient, sim_date in patient_month_generator(start, end, patients):
-        if key in test_data["Patients"]:
+    for patient, sim_date, in_test_set in patient_month_generator(start, end, patients):
+        if in_test_set:
             add_feature_slice(test_data, diseases, patient, sim_date)
         else:
             add_feature_slice(learn_data, diseases, patient, sim_date)
@@ -75,10 +78,12 @@ def simulate_predictor(patients, diseases, start, end):
     return learn_data, test_data
 
 
-def simulate_chads_vasc(patients, start, end):
+def simulate_chads_vasc(patients, start, end, only_test_set=False):
     print("Simulating...\nStart Date: {}\nEnd Date: {}".format(start, end))
     data = {"Data": [], "Target": []}
-    for key, patient, sim_date in patient_month_generator(start, end, patients):
+    for patient, sim_date, in_test_set in patient_month_generator(start, end, patients):
+        if only_test_set and not in_test_set:
+            continue
         data["Data"].append(1 if patient.should_have_AC(sim_date, chads_vasc, {"max_value": 3}) else 0)
         data["Target"].append(1 if patient.should_have_AC(sim_date, future_stroke, {"months": 12}) else 0)
     return data
