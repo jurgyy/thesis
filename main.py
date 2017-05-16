@@ -8,7 +8,7 @@ from csv_reader.diagnose_csv import get_diagnoses
 from csv_reader.medication_csv import get_medications
 from csv_reader.patients_csv import get_patients
 from practitioner import analyze_practitioners
-from simulations import compare_predictor_chads_vasc
+from simulations import compare_predictor_chads_vasc, find_adjusted_stroke_rate
 
 
 def add_diseases(patients, diagnoses):
@@ -93,6 +93,10 @@ def prepare_data():
     diseases = reduce_feature_space(diseases, diagnoses, min_frequency=10)
 
     # plot_disease_frequency(diseases, diagnoses)
+    for k, p in patients.items():
+        p.find_strokes()
+        p.find_chads_vasc_changes()
+
     return patients, diagnoses, diseases
 
 
@@ -103,9 +107,10 @@ def main():
     end = datetime.date(2015, 6, 1)
     # end = datetime.date(2007, 7, 1)
 
-    compare_predictor_chads_vasc(patients, diseases, start, end)
+    # compare_predictor_chads_vasc(patients, diseases, start, end)
     # analyze_practitioners(patients, start, end)
-
+    asr = find_adjusted_stroke_rate(patients, start, end)
+    print(asr)
 
 if __name__ == "__main__":
     main()

@@ -1,3 +1,5 @@
+from collections import Counter
+
 import numpy as np
 import timeit
 import random
@@ -39,7 +41,7 @@ def get_random_subset(patients, test_rate=0.30, seed=None):
     return np.array(patient_nrs[0:test_size]).tolist()
 
 
-def patient_month_generator(start, end, patients):
+def patient_month_generator(start, end, patients, step=1):
     sim_date = start
     test_set = get_random_subset(patients, test_rate=.70)
     while sim_date < end:
@@ -57,7 +59,7 @@ def patient_month_generator(start, end, patients):
 
             yield patient, sim_date, patient_nr in test_set
 
-        sim_date += relativedelta(months=+1)
+        sim_date += relativedelta(months=+step)
 
 
 def simulate_predictor(patients, diseases, start, end):
@@ -89,13 +91,29 @@ def simulate_chads_vasc(patients, start, end, only_test_set=False):
     return data
 
 
-def compare_predictor_chads_vasc(patients, diseases, start, end):
-    for k, p in patients.items():
-        p.find_strokes()
-        p.find_chads_vasc_changes()
+def find_adjusted_stroke_rate(patients, start, end):
+    score_counter = Counter()
+    stroke_counter = Counter()
+    for patient, sim_date, _ in patient_month_generator(start, end, patients, step=12):
+        score = patient.calculate_chads_vasc(sim_date)
+        score_counter[score] += 1
 
+        if patient.should_have_AC(sim_date, future_stroke, {"months": 12}):
+            stroke_counter[score] += 1
+
+    asr = {}
+    with np.errstate(divide='ignore', invalid='ignore'):
+        baseline_rate = np.divide(stroke_counter[0], score_counter[0])
+        print("baseline rate: {}".format(baseline_rate))
+        for i in range(10):
+            print("{}) {}    {}".format(i, stroke_counter[i], score_counter[i]))
+            asr[i] = np.divide(stroke_counter[i], score_counter[i]) - baseline_rate
+
+    return asr
+
+
+def compare_predictor_chads_vasc(patients, diseases, start, end):
     chads_vasc_data = simulate_chads_vasc(patients, start, end)
-    # TODO: Find the true adjusted stroke rate
     learn, test = simulate_predictor(patients, diseases, start, end)
 
     print("CHADS-VASc...")
