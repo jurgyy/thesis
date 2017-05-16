@@ -37,10 +37,13 @@ def predict(learn_data, test_data, plot=False):
 
         xs = range(len(importances))
 
-        plt.barh(xs, importances)
+        dpi = 100
+        plt.figure(figsize=(780 / dpi, (len(ls)*17) / dpi), dpi=dpi)
+        plt.barh(xs, importances, align='center')
         plt.title("Feature Importance")
         plt.yticks(xs, ls)
-        plt.savefig("output/feature_importance.png", bbox_inches='tight', dpi=100)
+        plt.ylim(-1, len(ls) + 1)
+        plt.savefig("output/feature_importance.png", bbox_inches='tight')
 
         print("Outputting first three trees")
         for i in range(3):
