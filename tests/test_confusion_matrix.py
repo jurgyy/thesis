@@ -8,7 +8,13 @@ class TestConfusionMatrix(TestCase):
     pred = [0, 1, 1, 1, 1, 1, 0, 0, 0, 0]
     cf = ConfusionMatrix(true, pred)
 
-    def test_basic_values(self):
+    def test_condition_prediction_count(self):
+        self.assertEqual(self.cf.c_p, 7)
+        self.assertEqual(self.cf.c_n, 3)
+        self.assertEqual(self.cf.p_p, 5)
+        self.assertEqual(self.cf.p_n, 5)
+
+    def test_matrix(self):
         t_p = f_n = f_p = t_n = 0
         for i in range(len(self.true)):
             if self.true[i] == self.pred[i] == 1:
