@@ -10,6 +10,11 @@ class ConfusionMatrix:
         self.predict = predict
         self.name = name
 
+        self.c_p = sum(true)
+        self.c_n = len(true) - self.c_p
+        self.p_p = sum(predict)
+        self.p_n = len(predict) - self.p_p
+
         self.t_p, self.f_n, self.f_p, self.t_n = self.calculate_matrix()
         self.matrix = (self.t_p, self.f_n, self.f_p, self.t_n)
 
@@ -54,6 +59,11 @@ class ConfusionMatrix:
         if self.name:
             print(self.name)
         print("Population Size:           {}".format(self.population))
+        print("")
+        print("Condition Positive         {}".format(self.c_p))
+        print("Condition Negative         {}".format(self.c_n))
+        print("Prediction Positive        {}".format(self.p_p))
+        print("Prediction Negative        {}".format(self.p_n))
         print("")
         print("True Positive:             {}".format(self.t_p))
         print("False Negative:            {}".format(self.f_n))
