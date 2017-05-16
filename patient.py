@@ -22,8 +22,6 @@ class Patient:
                                                        len(self.diagnoses.keys()))
 
     def __eq__(self, other):
-        # TODO: concisely check implications of this change
-        # return self.__dict__ == other.__dict__
         return (self.number == other.number and self.sex == other.sex and
                 self.birth_date == other.birth_date and self.death_date == other.death_date)
 
