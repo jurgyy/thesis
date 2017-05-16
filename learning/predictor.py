@@ -7,7 +7,7 @@ from learning.confusion_matrix import ConfusionMatrix
 
 
 def analyze_chads_vasc(data):
-    cf = ConfusionMatrix(data["Data"], data["Target"], name="CHADS-VASc")
+    cf = ConfusionMatrix(data["Target"], data["Data"], name="CHADS-VASc")
     return cf
 
 
@@ -22,7 +22,7 @@ def predict(learn_data, test_data, plot=False):
 
     predictions = clf.predict(test_data["Data"])
 
-    cf = ConfusionMatrix(predictions, test_data["Target"], name="Random Forest")
+    cf = ConfusionMatrix(test_data["Target"], predictions, name="Random Forest")
 
     if plot:
         print("Plotting Important features...")
