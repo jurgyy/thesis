@@ -23,6 +23,7 @@ def event_based(patient, timestamp, max_value=3):
 
 def future_stroke(patient, timestamp, months=12):
     for s in patient.strokes:
-        if s <= timestamp <= s + relativedelta(months=+months):
+        # "timestamp < s" because "<=" would mean strokes are predicting itself
+        if timestamp < s <= timestamp + relativedelta(months=+months):
             return True
     return False
