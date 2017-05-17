@@ -205,10 +205,14 @@ class TestPatientShouldHaveAC(TestCase):
     def test_method_future_stroke(self):
         self.assertFalse(self.patient.should_have_AC(d(1980, 1, 1), future_stroke, {"months": 12}))
         self.assertFalse(self.patient.should_have_AC(d(1985, 1, 1), future_stroke, {"months": 12}))
-        self.assertTrue(self.patient.should_have_AC(d(1990, 1, 1), future_stroke, {"months": 12}))
+        self.assertTrue(self.patient.should_have_AC(d(1989, 12, 31), future_stroke, {"months": 12}))
+        self.assertFalse(self.patient.should_have_AC(d(1990, 1, 1), future_stroke, {"months": 12}))
         self.assertFalse(self.patient.should_have_AC(d(1995, 1, 1), future_stroke, {"months": 12}))
         self.assertFalse(self.patient.should_have_AC(d(2000, 1, 1), future_stroke, {"months": 12}))
-        self.assertTrue(self.patient.should_have_AC(d(2005, 1, 1), future_stroke, {"months": 12}))
+        self.assertFalse(self.patient.should_have_AC(d(2003, 12, 31), future_stroke, {"months": 12}))
+        self.assertTrue(self.patient.should_have_AC(d(2004, 1, 1), future_stroke, {"months": 12}))
+        self.assertTrue(self.patient.should_have_AC(d(2004, 12, 31), future_stroke, {"months": 12}))
+        self.assertFalse(self.patient.should_have_AC(d(2005, 1, 1), future_stroke, {"months": 12}))
 
 
 if __name__ == "__main__":
