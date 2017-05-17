@@ -41,9 +41,9 @@ def get_random_subset(patients, test_rate=0.30, seed=None):
     return np.array(patient_nrs[0:test_size]).tolist()
 
 
-def patient_month_generator(start, end, patients, step=1):
+def patient_month_generator(start, end, patients, step=1, test_rate=.20):
     sim_date = start
-    test_set = get_random_subset(patients, test_rate=.70)
+    test_set = get_random_subset(patients, test_rate=test_rate)
     while sim_date < end:
         for patient_nr, patient in patients.items():
             # Excluded patients are either:
@@ -113,7 +113,12 @@ def find_adjusted_stroke_rate(patients, start, end):
 
 
 def compare_predictor_chads_vasc(patients, diseases, start, end):
-    chads_vasc_data = simulate_chads_vasc(patients, start, end)
+    seed = random.randint(0, 1000)
+
+    random.seed(seed)
+    chads_vasc_data = simulate_chads_vasc(patients, start, end, only_test_set=True)
+
+    random.seed(seed)
     learn, test = simulate_predictor(patients, diseases, start, end)
 
     print("CHADS-VASc...")
