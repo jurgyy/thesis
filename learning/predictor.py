@@ -11,26 +11,26 @@ def analyze_chads_vasc(data):
     return cf
 
 
-def predict(learn_data, test_data, plot=False):
+def predict(learn_features, learn_target, test_features, test_target, labels, plot=False):
     clf = ensemble.RandomForestClassifier(n_estimators=100, n_jobs=-1)
 
-    print("# Learn Data Size: {}".format(len(learn_data["Data"])))
-    print("# Test Data Size:  {}".format(len(test_data["Data"])))
-    print("# Features:        {}".format(len(learn_data["Data"][0])))
+    print("# Learn Data Size: {}".format(len(learn_features)))
+    print("# Test Data Size:  {}".format(len(test_features)))
+    print("# Features:        {}".format(len(learn_features[0])))
 
-    clf.fit(learn_data["Data"], learn_data["Target"])
+    clf.fit(learn_features, learn_target)
 
-    predictions = clf.predict(test_data["Data"])
+    predictions = clf.predict(test_features)
 
-    cf = ConfusionMatrix(test_data["Target"], predictions, name="Random Forest")
+    cf = ConfusionMatrix(test_target, predictions, name="Random Forest")
 
     if plot:
         try:
-            plot_features(clf, learn_data["Data Labels"])
+            plot_features(clf, labels)
         except:
             print("Error plotting features. Continuing...")
         try:
-            plot_trees(clf, learn_data["Data Labels"], n=3)
+            plot_trees(clf, labels, n=3)
         except:
             print("Error plotting trees. Continuing...")
     return cf

@@ -11,22 +11,28 @@ from disease_groups import atrial_fib
 from learning.predictor import predict, analyze_chads_vasc
 
 
-def add_feature_slice(data, diseases, patient, sim_date):
+def get_feature_slice(diseases, patient, sim_date, days_since=True):
     feature_vector = [1 if patient.has_disease(d, sim_date, chronic=True) else 0 for d in diseases]
-    feature_vector += [patient.days_since_diagnosis(d, sim_date) if feature_vector[i] else 0
-                       for i, d in enumerate(diseases)]
+    if days_since:
+        feature_vector += [patient.days_since_diagnosis(d, sim_date) if feature_vector[i] else 0
+                           for i, d in enumerate(diseases)]
 
     feature_vector.append(1 if patient.is_female() else 0)
     feature_vector.append(patient.calculate_age(sim_date))
 
-    data["Data"].append(feature_vector)
-    data["Target"].append(patient.should_have_AC(sim_date, future_stroke, {"months": 12}))
+    target = patient.should_have_AC(sim_date, future_stroke, {"months": 12})
 
-    # TODO: would be more efficient if adding labels could be done before the simulation
-    if len(data["Data Labels"]) < len(feature_vector):
-        data["Data Labels"] = [str(d) for d in diseases]
-        data["Data Labels"] += ["days since {}".format(d) for d in diseases]
-        data["Data Labels"] += ["Gender", "Age"]
+    return feature_vector, target
+
+
+def get_feature_labels(diseases, days_since=True):
+    """ Make sure that this function is in line with get_feature_slice() """
+    labels = [str(d) for d in diseases]
+    if days_since:
+        labels += ["days since {}".format(d) for d in diseases]
+    labels += ["Gender", "Age"]
+
+    return labels
 
 
 def get_random_subset(patients, test_rate=0.30, seed=None):
@@ -50,11 +56,11 @@ def patient_month_generator(start, end, patients, step=1, test_rate=.20):
             #  - Not alive
             #  - Don't have atrial fib (yet)
             #  - Last diagnosis was more than a year ago
-            #  - Are receiving antithrombotic agents (this skews the results)
+            #  - Are receiving antithrombotic agents (this skews the results), temporarily turned off
             if (not patient.is_alive(sim_date)) or \
                     (not patient.has_disease_group(atrial_fib, sim_date, chronic=True)) or \
-                    (patient.days_since_last_diagnosis(sim_date) > 366) or \
-                    patient.has_medication_group("B01", sim_date):  # Antithrombotic Agents start with B01
+                    (patient.days_since_last_diagnosis(sim_date) > 366):  # or \
+                    # patient.has_medication_group("B01", sim_date):  # Antithrombotic Agents start with B01
                 continue
 
             yield patient, sim_date, patient_nr in test_set
@@ -63,16 +69,23 @@ def patient_month_generator(start, end, patients, step=1, test_rate=.20):
 
 
 def simulate_predictor(patients, diseases, start, end):
-    learn_data = {"Data": [], "Target": [], "Data Labels": []}
-    test_data = {"Data": [], "Target": [], "Data Labels": []}
+    learn_data = {"Data": [], "Target": []}
+    test_data = {"Data": [], "Target": []}
 
     start_timer = timeit.default_timer()
-    print("Simulating...\nStart Date: {}\nEnd Date: {}".format(start, end))
+    print("Simulating Predictor...\nStart Date: {}\nEnd Date: {}".format(start, end))
+
+    learn_data["Data Labels"] = get_feature_labels(diseases, days_since=False)
+    test_data["Data Labels"] = learn_data["Data Labels"]
+
     for patient, sim_date, in_test_set in patient_month_generator(start, end, patients):
+        features, target = get_feature_slice(diseases, patient, sim_date, days_since=False)
         if in_test_set:
-            add_feature_slice(test_data, diseases, patient, sim_date)
+            test_data["Data"].append(features)
+            test_data["Target"].append(target)
         else:
-            add_feature_slice(learn_data, diseases, patient, sim_date)
+            learn_data["Data"].append(features)
+            learn_data["Target"].append(target)
 
     stop_timer = timeit.default_timer()
     print("Time elapsed: {}".format(stop_timer - start_timer))
@@ -81,7 +94,7 @@ def simulate_predictor(patients, diseases, start, end):
 
 
 def simulate_chads_vasc(patients, start, end, only_test_set=False):
-    print("Simulating...\nStart Date: {}\nEnd Date: {}".format(start, end))
+    print("Simulating CHADS-Vasc...\nStart Date: {}\nEnd Date: {}".format(start, end))
     data = {"Data": [], "Target": []}
     for patient, sim_date, in_test_set in patient_month_generator(start, end, patients):
         if only_test_set and not in_test_set:
@@ -112,20 +125,49 @@ def find_adjusted_stroke_rate(patients, start, end):
     return asr
 
 
-def compare_predictor_chads_vasc(patients, diseases, start, end):
-    seed = random.randint(0, 1000)
+def export_data(learn, test):
+    np.save("output/data", learn["Data"] + test["Data"])
+    np.save("output/target", learn["Target"] + test["Target"])
+    np.save("output/labels", learn["Data Labels"])
+
+
+def import_data(test_rate=0.2):
+    data = np.load("output/data.npy")
+    target = np.load("output/target.npy")
+    labels = np.load("output/labels.npy")
+    
+    split = 1 - round(len(data) * test_rate)
+
+    learn = {"Data": data[0:split].tolist(),
+             "Target": target[0:split].tolist(),
+             "Data Labels": labels}
+    test = {"Data": data[split:].tolist(),
+            "Target": target[split:].tolist(),
+            "Data Labels": labels}
+
+    return learn, test
+
+
+def compare_predictor_chads_vasc(patients, diseases, start, end, load_from_file=False):
+    seed = random.randint(0, 1000000)
 
     random.seed(seed)
     chads_vasc_data = simulate_chads_vasc(patients, start, end, only_test_set=True)
 
-    random.seed(seed)
-    learn, test = simulate_predictor(patients, diseases, start, end)
+    if load_from_file:
+        learn, test = import_data()
+    else:
+        random.seed(seed)
+        learn, test = simulate_predictor(patients, diseases, start, end)
+        export_data(learn, test)
 
     print("CHADS-VASc...")
     cf_chads_vasc = analyze_chads_vasc(chads_vasc_data)
 
     print("Predicting...")
-    cf_prediction = predict(learn, test, plot=True)
+    cf_prediction = predict(learn["Data"], learn["Target"],
+                            test["Data"], test["Target"],
+                            learn["Data Labels"], plot=True)
 
     cf_chads_vasc.dump()
     cf_prediction.dump()
