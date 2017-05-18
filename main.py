@@ -1,9 +1,9 @@
 import numpy as np
 import datetime
-import json
 
 import matplotlib.pyplot as plt
 
+import disease_groups
 from csv_reader.diagnose_csv import get_diagnoses
 from csv_reader.medication_csv import get_medications
 from csv_reader.patients_csv import get_patients
@@ -65,21 +65,6 @@ def plot_disease_frequency(diseases, diagnoses):
     plt.show()
 
 
-def read(loc):
-    with open(loc, 'r') as f:
-        try:
-            data = json.load(f)
-        except ValueError:
-            data = {}
-
-    return data
-
-
-def write(loc, data):
-    with open(loc, 'w') as f:
-        json.dump(data, f)
-
-
 def prepare_data():
     print("Reading CSV files...")
     patients = get_patients("data/msc_test/patients_general.csv")
@@ -100,6 +85,14 @@ def prepare_data():
     return patients, diagnoses, diseases
 
 
+def get_chads_vasc_diseases():
+    return disease_groups.chads_vasc_c + \
+           disease_groups.chads_vasc_d + \
+           disease_groups.chads_vasc_s + \
+           disease_groups.chads_vasc_v + \
+           disease_groups.chads_vasc_h
+
+
 def main():
     patients, diagnoses, diseases = prepare_data()
 
@@ -107,10 +100,10 @@ def main():
     end = datetime.date(2015, 6, 1)
     # end = datetime.date(2007, 7, 1)
 
-    # compare_predictor_chads_vasc(patients, diseases, start, end)
+    compare_predictor_chads_vasc(patients, diseases, start, end, load_from_file=False)
     # analyze_practitioners(patients, start, end)
-    asr = find_adjusted_stroke_rate(patients, start, end)
-    print(asr)
+    # asr = find_adjusted_stroke_rate(patients, start, end)
+    # print(asr)
 
 if __name__ == "__main__":
     main()
