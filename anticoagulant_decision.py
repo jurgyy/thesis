@@ -2,9 +2,7 @@ from dateutil.relativedelta import relativedelta
 
 
 def chads_vasc(patient, timestamp, max_value=3):
-    if patient.calculate_chads_vasc(timestamp) >= max_value:
-        return True
-    return False
+    return patient.calculate_chads_vasc(timestamp) >= max_value
 
 
 def event_based(patient, timestamp, max_value=3):
