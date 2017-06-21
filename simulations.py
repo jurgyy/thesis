@@ -7,8 +7,19 @@ import random
 from dateutil.relativedelta import relativedelta
 
 from anticoagulant_decision import future_stroke, chads_vasc
-from disease_groups import atrial_fib
+from disease_groups import *
 from learning.predictor import predict, analyze_chads_vasc
+
+
+def get_chads_vasc_feature(patient, sim_date):
+    groups = [chads_vasc_c, chads_vasc_h, chads_vasc_d, chads_vasc_s, chads_vasc_v]
+
+    feature_vector = [1 if patient.has_disease_group(g, sim_date, chronic=True) else 0 for g in groups]
+    feature_vector.append(1 if patient.is_female() else 0)
+    feature_vector.append(patient.calculate_age(sim_date))
+
+    target = patient.should_have_AC(sim_date, future_stroke, {"months": 12})
+    return feature_vector, target
 
 
 def get_feature_slice(diseases, patient, sim_date, days_since=True):
@@ -47,8 +58,9 @@ def get_random_subset(patients, test_rate=0.30, seed=None):
     return np.array(patient_nrs[0:test_size]).tolist()
 
 
-def patient_month_generator(start, end, patients, step=1, test_rate=.20):
+def patient_month_generator(patients, start, end, step=1, test_rate=.20):
     sim_date = start
+    # TODO: move split to other somewhere else
     test_set = get_random_subset(patients, test_rate=test_rate)
     while sim_date < end:
         for patient_nr, patient in patients.items():
@@ -75,11 +87,13 @@ def simulate_predictor(patients, diseases, start, end):
     start_timer = timeit.default_timer()
     print("Simulating Predictor...\nStart Date: {}\nEnd Date: {}".format(start, end))
 
-    learn_data["Data Labels"] = get_feature_labels(diseases, days_since=False)
+    # learn_data["Data Labels"] = get_feature_labels(diseases, days_since=False)
+    learn_data["Data Labels"] = ["C", "H", "D", "S", "V", "Gender", "Age"]
     test_data["Data Labels"] = learn_data["Data Labels"]
 
-    for patient, sim_date, in_test_set in patient_month_generator(start, end, patients):
-        features, target = get_feature_slice(diseases, patient, sim_date, days_since=False)
+    for patient, sim_date, in_test_set in patient_month_generator(patients, start, end):
+        # features, target = get_feature_slice(diseases, patient, sim_date, days_since=False)
+        features, target = get_chads_vasc_feature(patient, sim_date)
         if in_test_set:
             test_data["Data"].append(features)
             test_data["Target"].append(target)
@@ -96,7 +110,7 @@ def simulate_predictor(patients, diseases, start, end):
 def simulate_chads_vasc(patients, start, end, only_test_set=False):
     print("Simulating CHADS-Vasc...\nStart Date: {}\nEnd Date: {}".format(start, end))
     data = {"Data": [], "Target": []}
-    for patient, sim_date, in_test_set in patient_month_generator(start, end, patients):
+    for patient, sim_date, in_test_set in patient_month_generator(patients, start, end):
         if only_test_set and not in_test_set:
             continue
         data["Data"].append(1 if patient.should_have_AC(sim_date, chads_vasc, {"max_value": 3}) else 0)
@@ -107,7 +121,7 @@ def simulate_chads_vasc(patients, start, end, only_test_set=False):
 def find_adjusted_stroke_rate(patients, start, end):
     score_counter = Counter()
     stroke_counter = Counter()
-    for patient, sim_date, _ in patient_month_generator(start, end, patients, step=12):
+    for patient, sim_date, _ in patient_month_generator(patients, start, end, step=12):
         score = patient.calculate_chads_vasc(sim_date)
         score_counter[score] += 1
 
