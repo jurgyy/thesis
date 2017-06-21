@@ -17,7 +17,7 @@ chads_vasc_c = [Disease("INT", "107"),  # Decompensatio cordis
                 Disease("CAR", "301"),  # Acuut hartfalen
                 Disease("CAR", "302"),  # chronisch hartfalen
                 Disease("CAR", "802"),  # followup na PTCA e/o CABG/abl
-                Disease("GER", "262"),
+                Disease("GER", "262"),  # Decompensatio cordis
                 Disease("CAR", "203"),  # angina pectoris, onstabiel
                 Disease("PLA", "352")]  # decompr overige compr syndr
 chads_vasc_h = [Disease("7", "901"),
@@ -40,6 +40,7 @@ chads_vasc_s = [Disease("INT", "101"),
 chads_vasc_v = [Disease("INT", "102"),  # Instabiele AP, myocardinfarct
                 Disease("INT", "104"),
                 Disease("INT", "124"),  # atheroscl extr/perif vaatlijd
+                Disease("GER", "261"),  # Aandoeningen hartvaatstelsel
                 Disease("OOG", "657"),  # vaatafsluiting
                 Disease("ANE", "110"),  # Ischaem pijn a/d extremiteiten
                 Disease("CHI", "406"),  # aneurysma aorta abd, ruptuur
