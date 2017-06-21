@@ -28,7 +28,7 @@ class TestMedicationRate(TestCase):
         self.assertEqual(self.rate.total,
                          Counter({1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9}))
 
-        self.assertEqual(self.rate.required,
+        self.assertEqual(self.rate.with_medication,
                          Counter({1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 4, 8: 4, 9: 5}))
 
     def test_get_rates(self):
@@ -38,13 +38,13 @@ class TestMedicationRate(TestCase):
 
     def test_get_count_threshold(self):
         self.assertEqual(self.rate.get_count_threshold(0),
-                         (sum(self.rate.required.values()), sum(self.rate.total.values())))
+                         (sum(self.rate.with_medication.values()), sum(self.rate.total.values())))
 
         self.assertEqual(self.rate.get_count_threshold(5), (19, 35))
 
     def test_get_rate_threshold(self):
         self.assertEqual(self.rate.get_rate_threshold(0),
-                         sum(self.rate.required.values()) / sum(self.rate.total.values()))
+                         sum(self.rate.with_medication.values()) / sum(self.rate.total.values()))
 
         self.assertEqual(self.rate.get_rate_threshold(5), 19 / 35)
 
@@ -80,8 +80,8 @@ class TestPractitionerAnalysis(TestCase):
         disease_TE2_001 = Disease("TE2", "001", description="Test Disease 3")
         disease_TE3_001 = Disease("TE3", "001", description="Test Disease 4")
 
-        p5 = Patient(5, "m", d(1931, 2, 3), d(datetime.MAXYEAR, 12, 31))
-        p123 = Patient(123, "v", d(1999, 10, 11), d(2015, 1, 1))
+        p5 = Patient(5, "m", d(1931, 1, 1), d(datetime.MAXYEAR, 12, 31))
+        p123 = Patient(123, "v", d(1999, 1, 1), d(2015, 1, 1))
 
         expected = [
             (p5, Diagnosis(disease_TE1_000, d(2010, 1, 1), d(2010, 1, 31), "John Deer")),
@@ -103,8 +103,8 @@ class TestPractitionerAnalysis(TestCase):
     def test_get_diagnosis_tuples_disease(self):
         disease_TE1_000 = Disease("TE1", "000", description="Test Disease 1")
 
-        p5 = Patient(5, "m", d(1931, 2, 3), d(datetime.MAXYEAR, 12, 31))
-        p123 = Patient(123, "v", d(1999, 10, 11), d(2015, 1, 1))
+        p5 = Patient(5, "m", d(1931, 1, 1), d(datetime.MAXYEAR, 12, 31))
+        p123 = Patient(123, "v", d(1999, 1, 1), d(2015, 1, 1))
 
         expected = [
             (p5, Diagnosis(disease_TE1_000, d(2010, 1, 1), d(2010, 1, 31), "John Deer")),
@@ -131,15 +131,15 @@ class TestPractitionerAnalysis(TestCase):
 
         second = MedicationRate()
         second.total = Counter([2] * 2)
-        second.required = Counter([2])
+        second.with_medication = Counter([2])
 
         third = MedicationRate()
         third.total = Counter([2])
-        third.required = Counter([2])
+        third.with_medication = Counter([2])
 
         fourth = MedicationRate()
         fourth.total = Counter([2])
-        fourth.required = Counter([2])
+        fourth.with_medication = Counter([2])
 
         expected = {
             "John Deer": {d(2010, 1, 1): first,
@@ -158,8 +158,8 @@ class TestPractitionerAnalysis(TestCase):
 
         start = d(2010, 1, 1)
         end = d(2011, 4, 1)
-        outcome = analyze_practitioners(self.patients, start, end,
-                                        bin_months=bin_size, meds_start_with="B", spec=None, diag=None, plot=False)
+        outcome = analyze_practitioners(self.patients, end, end=bin_size, bin_months=bin_size, meds_start_with="B",
+                                        spec=None, diag=None, plot=False)
         self.assertEqual(expected, outcome)
 
 

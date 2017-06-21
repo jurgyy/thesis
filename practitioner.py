@@ -1,3 +1,4 @@
+import datetime
 from collections import Counter
 import numpy as np
 from dateutil.relativedelta import relativedelta
@@ -25,10 +26,7 @@ def get_practitioners(patients, spec=None):
         for diagnosis in patient.diagnoses.iter_diagnoses():
             if not diagnosis.practitioner:
                 continue
-            if spec is None:
-                practitioners.add(diagnosis.practitioner)
-                continue
-            if spec == diagnosis.disease.spec:
+            if diagnosis.disease.spec == spec or spec is None:
                 practitioners.add(diagnosis.practitioner)
 
     return practitioners
@@ -49,45 +47,66 @@ def get_diagnosis_tuples(patients, disease=None):
     return tuples
 
 
-def plot_data(data, bins):
-    hist_data = []
-    annotations = []
+def moving_average(a, n=3):
+    ret = np.cumsum(a, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n
+
+
+def plot_data(data, split_date=None):
+    colors = ['C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
     legend = []
-    for practitioner, v in data.items():
-        hist = []
-        anos = []
-        legend.append(practitioner)
-
-        for date, medication_rate in v.items():
-            hist.append(medication_rate.get_rate_threshold(3))
-            a, b = medication_rate.get_count_threshold(3)
-            anos.append("{}/{}".format(a, b))
-
-        hist_data.append(hist)
-        annotations.append(anos)
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    # Leave space equal to the width of an extra bar between different periods
-    width = 1 / (len(data) + 1)
-    for i, d in enumerate(hist_data):
-        positions = np.array(range(len(bins))) + i * width + 0.5 * width
-        ax.bar(positions, d, width)
-        for j in range(len(d)):
-            ax.text(positions[j], d[j], annotations[i][j], horizontalalignment='center')
+    lines_correct = []
+    lines_incorrect = []
 
-    # TODO: fix bug; labels starting with the second element
-    ax.set_xticklabels([""] + [d.strftime("%B %Y") for d in bins])
+    i = 0
+    for practitioner, v in data.items():
+        practitioner_correct = []
+        practitioner_incorrect = []
+        practitioner_dates = []
+
+        for date, medication_rate in v.items():
+            all_medic, all_total = medication_rate.get_count_threshold(0)
+            correct_medic, correct_total = medication_rate.get_count_threshold(3)
+            incorrect_medic, incorrect_total = all_medic - correct_medic, all_total - correct_total
+
+            if all_total > 1:
+                practitioner_correct.append(correct_medic / correct_total if correct_total > 0 else 0)
+                practitioner_incorrect.append(incorrect_medic / incorrect_total if incorrect_total > 0 else 0)
+                practitioner_dates.append(date)
+
+        # plt.scatter(practitioner_dates, practitioner_data)
+        if len(practitioner_dates) < 12:
+            continue
+
+        legend.append(practitioner)
+
+        c = colors[i % len(colors)]
+        i += 1
+
+        l1 = plt.plot(practitioner_dates[:-4], moving_average(practitioner_correct, n=5), color=c)
+        l2 = plt.plot(practitioner_dates[:-4], moving_average(practitioner_incorrect, n=5),
+                      "--", color=c, label='_nolegend_')
+
+        lines_correct.append(l1)
+        lines_incorrect.append(l2)
+
+    if split_date is not None:
+        plt.plot([split_date, split_date], [0, 1], ":", color="black", label='_nolegend_')
+
+    style_legend = ax.legend([lines_correct[0][0], lines_incorrect[0][0]], ["Correct", "Incorrect"], loc=1)
     ax.legend(legend)
+    plt.gca().add_artist(style_legend)
+
     plt.show()
 
 
-def analyze_practitioners(patients, start, end, bin_months=3, meds_start_with="B", spec="CAR", diag="401", plot=True):
-    date_bins = get_month_bins(start, end, bin_months)
-
+def analyze_practitioners(patients, start, end, bin_months=1, meds_start_with="B01", spec="CAR", diag="401", plot=True):
     practitioners = get_practitioners(patients, spec=spec)
-    data = {k: {d: MedicationRate() for d in date_bins} for k in practitioners}
 
     if spec is None or diag is None:
         disease = None
@@ -97,25 +116,28 @@ def analyze_practitioners(patients, start, end, bin_months=3, meds_start_with="B
     patient_diagnosis_tuples = get_diagnosis_tuples(patients, disease=disease)
     patient_diagnosis_tuples.sort(key=lambda tup: tup[1])
 
+    date_bins = get_month_bins(start, end, bin_months)
+    data = {k: {d: MedicationRate() for d in date_bins} for k in practitioners}
     i = 0
-    for p, d in patient_diagnosis_tuples:
-        if d.practitioner not in practitioners:
+    for patient, diagnosis in patient_diagnosis_tuples:
+        if diagnosis.practitioner not in practitioners:
             continue
-        if d.start_date < start:
+        if diagnosis.start_date < start:
             continue
-        if d.start_date > end:
+        if diagnosis.start_date > end:
             break
 
-        while d.start_date > date_bins[i + 1]:
+        while diagnosis.start_date > date_bins[i + 1]:
             i += 1
 
-        score = p.calculate_chads_vasc(d.start_date)
-        data[d.practitioner][date_bins[i]].update(score,
-                                                  p.has_medication_group(meds_start_with, d.start_date) or
-                                                  p.has_medication_group(meds_start_with, d.start_date + relativedelta(days=+1)))
+        score = patient.calculate_chads_vasc(diagnosis.start_date)
+        has_medication = patient.has_medication_group(meds_start_with, diagnosis.start_date) \
+                      or patient.has_medication_group(meds_start_with, diagnosis.start_date + relativedelta(days=+1))
+
+        data[diagnosis.practitioner][date_bins[i]].update(score, has_medication)
 
     if plot:
-        plot_data(data, date_bins)
+        plot_data(data, datetime.date(2015, 7, 1))
 
     return data
 
@@ -123,44 +145,44 @@ def analyze_practitioners(patients, start, end, bin_months=3, meds_start_with="B
 class MedicationRate:
     def __init__(self):
         self.total = Counter()
-        self.required = Counter()
+        self.with_medication = Counter()
 
     def __repr__(self):
-        return "MedicationRate.({}, {})".format(self.required, self.total)
+        return "MedicationRate.({}, {})".format(self.with_medication, self.total)
 
     def __eq__(self, other):
-        return self.total == other.total and self.required == other.required
+        return self.total == other.total and self.with_medication == other.with_medication
 
-    def update(self, score, required):
+    def update(self, score, has_medication):
         self.total[score] += 1
-        if required:
-            self.required[score] += 1
+        if has_medication:
+            self.with_medication[score] += 1
 
     def get_rates(self):
         total = np.array([])
-        required = np.array([])
+        with_medication = np.array([])
         for k in range(10):
             total = np.append(total, [self.total[k]])
-            required = np.append(required, [self.required[k]])
+            with_medication = np.append(with_medication, [self.with_medication[k]])
 
         with np.errstate(divide='ignore', invalid='ignore'):
-            return np.divide(required, total)
+            return np.divide(with_medication, total)
 
     def get_count_threshold(self, score):
         total = 0
-        required = 0
+        with_medication = 0
         for s in self.total:
             if s < score:
                 continue
             total += self.total[s]
-            required += self.required[s]
+            with_medication += self.with_medication[s]
 
-        return required, total
+        return with_medication, total
 
     def get_rate_threshold(self, score):
-        required, total = self.get_count_threshold(score)
+        with_medication, total = self.get_count_threshold(score)
 
         with np.errstate(divide='ignore', invalid='ignore'):
-            div = np.divide(required, total)
+            div = np.divide(with_medication, total)
 
         return 0 if np.isnan(div) else div
