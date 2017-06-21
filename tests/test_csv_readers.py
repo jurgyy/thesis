@@ -17,11 +17,11 @@ class TestCsvReaders(TestCase):
     medications = get_medications("test_data/test_meds.csv")
 
     def test_get_patients(self):
-        self.assertEqual(self.patients[5], Patient(5, "m", d(1931, 2, 3), d(datetime.MAXYEAR, 12, 31)))
-        self.assertEqual(self.patients[123], Patient(123, "v", d(1999, 10, 11), d(2015, 1, 1)))
+        self.assertEqual(self.patients[5], Patient(5, "m", d(1931, 1, 1), d(datetime.MAXYEAR, 12, 31)))
+        self.assertEqual(self.patients[123], Patient(123, "v", d(1999, 1, 1), d(2015, 1, 1)))
 
-        self.assertEqual(self.patients, {5: Patient(5, "m", d(1931, 2, 3), d(datetime.MAXYEAR, 12, 31)),
-                                         123: Patient(123, "v", d(1999, 10, 11), d(2015, 1, 1))})
+        self.assertEqual(self.patients, {5: Patient(5, "m", d(1931, 1, 1), d(datetime.MAXYEAR, 12, 31)),
+                                         123: Patient(123, "v", d(1999, 1, 1), d(2015, 1, 1))})
 
     def test_get_diagnoses(self):
         disease_TE1_000 = Disease("TE1", "000", description="Test Disease 1")
