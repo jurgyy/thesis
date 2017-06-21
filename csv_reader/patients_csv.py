@@ -1,18 +1,20 @@
 import pandas as pd
+import datetime
 
 from patient import Patient
-from csv_reader.reader import convert_to_date
 
 
 def get_patients(loc):
-    converters = {'GEBDAT': lambda x: convert_to_date(x),
-                  'OVERLDAT': lambda x: convert_to_date(x)}
-    dataframe = pd.read_csv(loc, sep='\t', converters=converters)
-    # Fields: PATIENTNR	GESLACHT	GEBDAT	OVERLEDEN	OVERLDAT
+    dataframe = pd.read_csv(loc, sep='\t')
+    # Fields: PATIENTNR GESLACHT LEEFTIJD OVERLEDEN OVRLLEEFTIJD
 
     patients = {}
 
     for p in dataframe.itertuples():
-        patients[p.PATIENTNR] = (Patient(p.PATIENTNR, p.GESLACHT.lower(), p.GEBDAT, p.OVERLDAT))
+        birth_date = datetime.date(2018 - int(p.LEEFTIJD), 1, 1)
+        death_date = datetime.date(birth_date.year + int(p.OVRLLEEFTIJD), 1, 1)\
+            if not pd.isnull(p.OVRLLEEFTIJD) else datetime.date(datetime.MAXYEAR, 12, 31)
+
+        patients[p.PATIENTNR] = Patient(p.PATIENTNR, p.GESLACHT.lower(), birth_date, death_date)
 
     return patients
