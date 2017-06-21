@@ -158,7 +158,7 @@ class TestPractitionerAnalysis(TestCase):
 
         start = d(2010, 1, 1)
         end = d(2011, 4, 1)
-        outcome = analyze_practitioners(self.patients, end, end=bin_size, bin_months=bin_size, meds_start_with="B",
+        outcome = analyze_practitioners(self.patients, start, end, bin_months=bin_size, meds_start_with="B",
                                         spec=None, diag=None, plot=False)
         self.assertEqual(expected, outcome)
 
