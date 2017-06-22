@@ -1,21 +1,20 @@
-from datetime import date as d
 import datetime
-from unittest import TestCase, main
-import numpy as np
 from collections import Counter
+from datetime import date as d
+from unittest import TestCase, main
 
-from practitioner import get_month_bins, get_practitioners, get_diagnosis_tuples, analyze_practitioners
-from practitioner import MedicationRate
+import numpy as np
 
 from csv_reader.diagnose_csv import get_diagnoses
 from csv_reader.medication_csv import get_medications
 from csv_reader.patients_csv import get_patients
-
-from main import add_diseases, add_medications
-
 from diagnosis import Diagnosis
-from patient import Patient
 from disease import Disease
+from main import add_diseases, add_medications
+from patient import Patient
+from practioner_analysis.medication_rate import MedicationRate
+from practioner_analysis.practitioner import get_month_bins, get_practitioners, get_diagnosis_tuples, \
+    analyze_practitioners
 
 
 class TestMedicationRate(TestCase):

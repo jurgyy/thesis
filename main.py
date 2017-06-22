@@ -1,4 +1,3 @@
-import numpy as np
 import datetime
 
 import matplotlib.pyplot as plt
@@ -7,8 +6,7 @@ import disease_groups
 from csv_reader.diagnose_csv import get_diagnoses
 from csv_reader.medication_csv import get_medications
 from csv_reader.patients_csv import get_patients
-from practitioner import analyze_practitioners
-from simulations import compare_predictor_chads_vasc, find_adjusted_stroke_rate
+from practioner_analysis.practitioner import analyze_practitioners
 
 
 def add_diseases(patients, diagnoses):
@@ -67,18 +65,20 @@ def plot_disease_frequency(diseases, diagnoses):
 
 def prepare_data():
     print("Reading CSV files...")
-    patients = get_patients("data/msc_test/patients_general.csv")
-    diagnoses = get_diagnoses("data/msc_test/patients_diseases.csv")
-    medications = get_medications("data/msc_test/patient_meds.csv")
+    patients = get_patients("data/msc_A/patient_general.csv")
+    diagnoses = get_diagnoses("data/msc_A/patient_diagnoses.csv", merge=False)
+    medications = get_medications("data/msc_A/patient_meds.csv")
 
     add_diseases(patients, diagnoses)
     add_medications(patients, medications)
 
     diseases = get_all_diseases(diagnoses)
-    diseases = reduce_feature_space(diseases, diagnoses, min_frequency=10)
+
+    # Optionally remove rare disease which reduces the feature space roughly in half
+    # diseases = reduce_feature_space(diseases, diagnoses, min_frequency=10)
 
     # plot_disease_frequency(diseases, diagnoses)
-    for k, p in patients.items():
+    for p in patients.values():
         p.find_strokes()
         p.find_chads_vasc_changes()
 
@@ -95,13 +95,13 @@ def get_chads_vasc_diseases():
 
 def main():
     patients, diagnoses, diseases = prepare_data()
-
     start = datetime.date(2005, 1, 1)
-    end = datetime.date(2015, 6, 1)
+    start = datetime.date(2013, 4, 1)
+    end = datetime.date(2017, 6, 1)
     # end = datetime.date(2007, 7, 1)
 
-    compare_predictor_chads_vasc(patients, diseases, start, end, load_from_file=False)
-    # analyze_practitioners(patients, start, end)
+    # compare_predictor_chads_vasc(patients, diseases, start, end, load_from_file=False)
+    analyze_practitioners(patients, start, end)
     # asr = find_adjusted_stroke_rate(patients, start, end)
     # print(asr)
 

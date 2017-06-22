@@ -1,9 +1,10 @@
 data/old_bsc
 .idea/
 __pycache__/
-binary_test.py
+examples/binary_test.py
 csv_reader/__pycache__/
 learning/__pycache__/
 output/
 data/
 graphviz/
+examples/sorting.py
