@@ -1,3 +1,7 @@
+"""
+The goal of this file was to understand why the ML algorithms weren't able to learn the strokes.
+As it turns out, the frequency of strokes was too low in the learn set.
+"""
 import numpy as np
 from sklearn import linear_model
 from sklearn import ensemble

@@ -1,3 +1,6 @@
+""""
+The goal of this file was to get more insight in the inner workings of the split algorithms.
+"""
 import timeit
 
 import numpy as np
