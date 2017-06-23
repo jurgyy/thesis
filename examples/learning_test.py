@@ -1,6 +1,7 @@
 """
 The goal of this file was to understand why the ML algorithms weren't able to learn the strokes.
-As it turns out, the frequency of strokes was too low in the learn set.
+As it turns out, the frequency of strokes was too low in the learn set. Balancing the number weights
+of the classes also works
 """
 import numpy as np
 from sklearn import linear_model
@@ -110,29 +111,33 @@ def main():
         t.append(target)
 
     """  Split data in test and learn sets """
-    # split = round(samples * test_rate)
-    # X_learn = X[split:]
-    # t_learn = t[split:]
-    # X_test = X[:split]
-    # t_test = t[:split]
-    strokes_indices = [i for i, v in enumerate(t) if v]
+    if True:
+        split = round(samples * test_rate)
+        X_learn = X[split:]
+        t_learn = t[split:]
+        X_test = X[:split]
+        t_test = t[:split]
 
-    learn_size = len(strokes_indices)
+        """  Use Random Forest to learn and predict the strokes """
+        clf = ensemble.RandomForestClassifier(n_estimators=100, n_jobs=-1, class_weight="balanced")
+    else:
+        strokes_indices = [i for i, v in enumerate(t) if v]
 
-    learn_indices = strokes_indices[len(strokes_indices) // 2:]
-    for i in range(len(t)):
-        if i not in strokes_indices:
-            learn_indices.append(i)
-        if len(learn_indices) >= learn_size:
-            break
-    X_learn = [X[i] for i in learn_indices]
-    t_learn = [t[i] for i in learn_indices]
-    X_test = [X[i] for i in range(len(X)) if i not in learn_indices]
-    t_test = [t[i] for i in range(len(t)) if i not in learn_indices]
+        learn_size = len(strokes_indices)
 
-    """  Use Random Forest or Logistic Regression to learn and predict the strokes """
-    clf = ensemble.RandomForestClassifier(n_estimators=100, n_jobs=-1)
-    # clf = linear_model.LogisticRegression()
+        learn_indices = strokes_indices[len(strokes_indices) // 2:]
+        for i in range(len(t)):
+            if i not in strokes_indices:
+                learn_indices.append(i)
+            if len(learn_indices) >= learn_size:
+                break
+        X_learn = [X[i] for i in learn_indices]
+        t_learn = [t[i] for i in learn_indices]
+        X_test = [X[i] for i in range(len(X)) if i not in learn_indices]
+        t_test = [t[i] for i in range(len(t)) if i not in learn_indices]
+
+        clf = ensemble.RandomForestClassifier(n_estimators=100, n_jobs=-1)
+
     clf.fit(X_learn, t_learn)
     ml_prediction = clf.predict(X_test)
     """  Compare the results with the target vector """
