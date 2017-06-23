@@ -47,6 +47,35 @@ class TestMedicationRate(TestCase):
 
         self.assertEqual(self.rate.get_rate_threshold(5), 19 / 35)
 
+    def test_add_medication_rates(self):
+        def get_numbers(mr):
+            with_meds = []
+            total = []
+            for i in range(10):
+                with_meds.append(mr.with_medication[i])
+                total.append(mr.total[i])
+            return with_meds, total
+
+        a = MedicationRate()
+        b = MedicationRate()
+
+        self.assertEqual(a + b, MedicationRate())
+
+        a.update(0, False)
+        a.update(1, False)
+        a.update(1, True)
+        a.update(3, True)
+
+        self.assertEqual(get_numbers(a + b), ([0, 1, 0, 1, 0, 0, 0, 0, 0, 0], [1, 2, 0, 1, 0, 0, 0, 0, 0, 0]))
+
+        b.update(1, True)
+        b.update(2, False)
+        b.update(2, True)
+        b.update(4, False)
+        b.update(6, True)
+
+        self.assertEqual(get_numbers(a + b), ([0, 2, 1, 1, 0, 0, 1, 0, 0, 0], [1, 3, 2, 1, 1, 0, 1, 0, 0, 0]))
+
 
 class TestPractitionerAnalysis(TestCase):
     patients = get_patients("test_data/test_patients.csv")
