@@ -14,6 +14,12 @@ class MedicationRate:
     def __eq__(self, other):
         return self.total == other.total and self.with_medication == other.with_medication
 
+    def __add__(self, other):
+        summed_rate = MedicationRate()
+        summed_rate.total = self.total + other.total
+        summed_rate.with_medication = self.with_medication + other.with_medication
+        return summed_rate
+
     def update(self, score, has_medication):
         self.total[score] += 1
         if has_medication:
