@@ -2,9 +2,10 @@ import datetime
 
 from dateutil.relativedelta import relativedelta
 
+from cdss_practitioners import cdss_practitioners
 from disease import Disease
 from practioner_analysis.medication_rate import MedicationRate
-from practioner_analysis.plot import plot_data
+from practioner_analysis.plot import plot_data, group_data, plot_difference
 
 
 def get_month_bins(start, end, bin_size):
@@ -79,7 +80,10 @@ def analyze_practitioners(patients, start, end, bin_months=1, meds_start_with="B
         data[diagnosis.practitioner][date_bins[i]].update(score, has_medication)
 
     if plot:
-        plot_data(data, datetime.date(2015, 7, 1), mva=3)
+        plot_data(data, split_date=datetime.date(2015, 7, 1), mva=3, fname="Medication Rate All")
+        grouped_data = group_data(data, cdss_practitioners, "CDSS", "No CDSS")
+        plot_data(grouped_data, split_date=datetime.date(2015, 7, 1), mva=3, fname="Medication Rate Grouped")
+        plot_difference(grouped_data, split_date=datetime.date(2015, 7, 1), mva=3, fname="Medication Rate Difference")
 
     return data
 
