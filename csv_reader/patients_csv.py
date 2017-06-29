@@ -4,8 +4,8 @@ import datetime
 from patient import Patient
 
 
-def get_patients(loc):
-    dataframe = pd.read_csv(loc, sep='\t')
+def get_patients(loc, sep):
+    dataframe = pd.read_csv(loc, sep=sep)
     # Fields: PATIENTNR GESLACHT LEEFTIJD OVERLEDEN OVRLLEEFTIJD
 
     patients = {}

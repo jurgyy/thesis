@@ -4,9 +4,9 @@ from csv_reader.reader import convert_to_date
 from medication import Medication
 
 
-def get_medications(loc):
+def get_medications(loc, sep):
     converters = {'VRSCHRDAT': lambda x: convert_to_date(x)}
-    dataframe = pd.read_csv(loc, sep='\t', converters=converters)
+    dataframe = pd.read_csv(loc, sep=sep, converters=converters)
     
     dataframe['ACTSTOPDT'] = dataframe['ACTSTOPDT'].apply(convert_to_date)
     dataframe['ATCCODE'] = dataframe['ATCCODE'].fillna('0000000')

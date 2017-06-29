@@ -12,11 +12,11 @@ def dbc_end_date(x):
     return x + pd.Timedelta(days=120) if x >= pd.datetime(2015, 1, 1).date() else x + pd.Timedelta(days=365)
 
 
-def get_diagnoses(loc, merge=True):
+def get_diagnoses(loc, sep, merge=True):
     converters = {'HOOFDDIAG': lambda x: str(x),
                   'UITVOERDER': lambda x: str(x),
                   'BEGINDAT': lambda x: convert_to_date(x)}
-    dataframe = pd.read_csv(loc, sep='\t', converters=converters)
+    dataframe = pd.read_csv(loc, sep=sep, converters=converters)
     # Fields: PATIENTNR	SPECIALISM	HOOFDDIAG	OMSCHRIJV	UITVOERDER	BEGINDAT	EINDDAT
 
     # Before 2015 DBCs were allowed to be as long as one year, after that only 120 days
