@@ -1,3 +1,4 @@
+# TODO: Is this ever used?
 anti_coagulants = [
     'B01AA03',
     'B01AA04',
