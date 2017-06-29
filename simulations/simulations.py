@@ -14,33 +14,34 @@ from learning.predictor import predict, analyze_chads_vasc
 def get_chads_vasc_feature(patient, sim_date):
     groups = [chads_vasc_c, chads_vasc_h, chads_vasc_d, chads_vasc_s, chads_vasc_v]
 
-    feature_vector = [1 if patient.has_disease_group(g, sim_date, chronic=True) else 0 for g in groups]
-    feature_vector.append(1 if patient.is_female() else 0)
-    feature_vector.append(patient.calculate_age(sim_date))
+    x = [1 if patient.has_disease_group(g, sim_date, chronic=True) else 0 for g in groups]
+    x.append(1 if patient.is_female() else 0)
+    x.append(patient.calculate_age(sim_date))
 
-    target = patient.should_have_AC(sim_date, future_stroke, {"months": 12})
-    return feature_vector, target
+    y = patient.should_have_AC(sim_date, future_stroke, {"months": 12})
+    return x, y
 
 
 def get_feature_slice(diseases, patient, sim_date, days_since=True):
-    feature_vector = [1 if patient.has_disease(d, sim_date, chronic=True) else 0 for d in diseases]
     if days_since:
-        feature_vector += [patient.days_since_diagnosis(d, sim_date) if feature_vector[i] else 0
-                           for i, d in enumerate(diseases)]
+        x = [patient.days_since_diagnosis(d, sim_date) if patient.has_disease(d, sim_date, chronic=True)
+             else 10000 for i, d in enumerate(diseases)]
+    else:
+        x = [1 if patient.has_disease(d, sim_date, chronic=True) else 0 for d in diseases]
 
-    feature_vector.append(1 if patient.is_female() else 0)
-    feature_vector.append(patient.calculate_age(sim_date))
+    x.append(1 if patient.is_female() else 0)
+    x.append(patient.calculate_age(sim_date))
 
-    target = patient.should_have_AC(sim_date, future_stroke, {"months": 12})
+    y = patient.should_have_AC(sim_date, future_stroke, {"months": 12})
 
-    return feature_vector, target
+    return x, y
 
 
 def get_feature_labels(diseases, days_since=True):
     """ Make sure that this function is in line with get_feature_slice() """
     labels = [str(d) for d in diseases]
-    if days_since:
-        labels += ["days since {}".format(d) for d in diseases]
+    # if days_since:
+    #     labels += ["days since {}".format(d) for d in diseases]
     labels += ["Gender", "Age"]
 
     return labels
