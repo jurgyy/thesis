@@ -48,7 +48,10 @@ def get_diagnosis_tuples(patients, disease=None):
     return tuples
 
 
-def analyze_practitioners(patients, start, end, bin_months=1, meds_start_with="B01", spec="CAR", diag="401", plot=True):
+def analyze_practitioners(patients, start, end, meds_start_with, bin_months=1, **kwargs):
+    print("analyzing practitioners...")
+
+    spec, diag = kwargs.get("spec"), kwargs.get("diag")
     practitioners = get_practitioners(patients, spec=spec)
 
     if spec is None or diag is None:
@@ -79,11 +82,26 @@ def analyze_practitioners(patients, start, end, bin_months=1, meds_start_with="B
 
         data[diagnosis.practitioner][date_bins[i]].update(score, has_medication)
 
-    if plot:
-        plot_data(data, split_date=datetime.date(2015, 7, 1), mva=3, fname="Medication Rate All")
+    if kwargs.get("plot"):
+        print("plotting...")
+        mva = 3
+        split_date = datetime.date(2015, 7, 1)
+        prefix = kwargs.get("fname_prefix")
+        prefix = prefix if prefix is not None else ""
+
+        fname = prefix + "Medication Rate All"
+        title = "Medication rate per cardiologist over time"
+        plot_data(data, split_date=split_date, mva=mva, fname=fname, title=title, legend=None)
+
         grouped_data = group_data(data, cdss_practitioners, "CDSS", "No CDSS")
-        plot_data(grouped_data, split_date=datetime.date(2015, 7, 1), mva=3, fname="Medication Rate Grouped")
-        plot_difference(grouped_data, split_date=datetime.date(2015, 7, 1), mva=3, fname="Medication Rate Difference")
+
+        fname = prefix + "Medication Rate Grouped"
+        title = "Medication rate over time grouped by use of CDSS"
+        plot_data(grouped_data, split_date=split_date, mva=mva, fname=fname, title=title, legend=grouped_data.keys())
+
+        fname = prefix + "Medication Rate Difference"
+        title = "Difference in medication rate over time grouped by score"
+        plot_difference(grouped_data, split_date=split_date, mva=mva, fname=fname, title=title)
 
     return data
 

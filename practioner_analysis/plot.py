@@ -1,7 +1,8 @@
-import datetime
+import string
 
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib.lines as mlines
 
 from practioner_analysis.medication_rate import MedicationRate
 
@@ -32,9 +33,9 @@ def group_data(data, inclusive_group, inclusive_name, exclusive_name):
     return grouped_data
 
 
-def plot_data(data, split_date=None, mva=None, fname=None):
-    dc = get_data_container(data, split_date=split_date)
-    plot(dc, split_date, mva, fname)
+def plot_data(data, **kwargs):
+    dc = get_data_container(data, split_date=kwargs.get("split_date"))
+    plot(dc, **kwargs)
 
 
 def get_data_container(data, split_date=None):
@@ -61,8 +62,8 @@ def get_data_container(data, split_date=None):
         all_dates = list(set(practitioner_high_dates).union(set(practitioner_low_dates)))
 
         if len(all_dates) < 12 or \
-                len([d for d in all_dates if d < split_date]) <= 6 or \
-                len([d for d in all_dates if d > split_date]) <= 6:
+                len([d for d in all_dates if d < split_date]) <= 12 or \
+                len([d for d in all_dates if d > split_date]) <= 12:
             continue
 
         if split_date is not None and not (min(all_dates) < split_date < max(all_dates)):
@@ -74,8 +75,8 @@ def get_data_container(data, split_date=None):
     return data_container
 
 
-def plot(practitioner_data, split_date, mva, fname):
-    fig = plt.figure(figsize=(14, 8))
+def plot(practitioner_data, split_date, mva, fname, legend=None, title=None):
+    fig = plt.figure(figsize=(8, 5))
     ax = fig.add_subplot(111)
 
     lines_high = []
@@ -90,8 +91,10 @@ def plot(practitioner_data, split_date, mva, fname):
         plt.scatter(low_dates, low, color=c, marker='x')
 
         if mva is not None:
-            l1 = plt.plot(high_dates[:-(mva - 1)], moving_average(high, n=mva), color=c)
-            l2 = plt.plot(low_dates[:-(mva - 1)], moving_average(low, n=mva),
+            pre = int(mva / 2)
+            post = mva - pre
+            l1 = plt.plot(high_dates[pre:-(post - 1)], moving_average(high, n=mva), color=c)
+            l2 = plt.plot(low_dates[pre:-(post - 1)], moving_average(low, n=mva),
                           "--", color=c, label='_nolegend_')
         else:
             l1 = plt.plot(high_dates, high, color=c)
@@ -103,8 +106,14 @@ def plot(practitioner_data, split_date, mva, fname):
     if split_date is not None:
         ax.axvline(split_date, linestyle=":", color="black", label='_nolegend_')
 
-    style_legend = ax.legend([lines_high[0][0], lines_low[0][0]], ["Score $\geq$ 3", "Score < 3"], loc=6)
-    ax.legend(list(practitioner_data.keys()), loc=7)
+    style_legend = ax.legend([lines_high[0][0], lines_low[0][0]], ["Score $\geq$ 3", "Score < 3"], loc=3)
+
+    # For privacy's sake, no use of the practitioner names in the legends
+    if legend is None:
+        ax.legend(string.ascii_uppercase[:len(practitioner_data.keys())], loc=2)
+    else:
+        ax.legend(legend, loc=2)
+
     plt.gca().add_artist(style_legend)
 
     ax.set_xlabel("Month")
@@ -113,12 +122,14 @@ def plot(practitioner_data, split_date, mva, fname):
     ax.yaxis.grid(True)
     ax.set_ylim(0, 1)
 
-    plt.title("Medication Rate per Practitioner over time")
+    if title is not None:
+        plt.title(title)
+
     plt.savefig("output/{}".format(fname))
 
 
-def plot_difference(grouped_data, split_date, mva, fname):
-    fig = plt.figure(figsize=(14, 8))
+def plot_difference(grouped_data, split_date, mva, fname, title=None):
+    fig = plt.figure(figsize=(8, 5))
     ax = fig.add_subplot(111)
 
     dc = get_data_container(grouped_data, split_date=split_date)
@@ -147,28 +158,38 @@ def plot_difference(grouped_data, split_date, mva, fname):
         x_low.append(date)
         y_low.append(cdss_low[i] - no_low[index])
 
-    low_color = colors[0]
-    high_color = colors[1]
+    low_color, low_marker = colors[2], "x"
+    high_color, high_marker = colors[2], "."
     if mva is not None:
-        plt.plot(x_low[:-(mva - 1)], moving_average(y_low, n=mva), color=low_color, label="Score < 3")
-        plt.plot(x_high[:-(mva - 1)], moving_average(y_high, n=mva), color=high_color, label="Score $\geq$ 3")
+        plt.plot(x_low[:-(mva - 1)], moving_average(y_low, n=mva), "--", color=low_color,
+                 label="Score < 3")
+        plt.plot(x_high[:-(mva - 1)], moving_average(y_high, n=mva), color=high_color,
+                 label="Score $\geq$ 3")
     else:
-        plt.plot(x_low, y_low, color=low_color, label="Score < 3")
+        plt.plot(x_low, y_low, "--", color=low_color, label="Score < 3")
         plt.plot(x_high, y_high, color=high_color, label="Score $\geq$ 3")
 
-    plt.scatter(x_low, y_low, marker='.')
-    plt.scatter(x_high, y_high, marker='.')
+    plt.scatter(x_low, y_low, marker=low_marker, color=low_color)
+    plt.scatter(x_high, y_high, marker=high_marker, color=high_color)
 
     if split_date is not None:
         ax.axvline(split_date, linestyle=":", color="black", label='_nolegend_')
 
-    ax.legend()
+    low_legend = mlines.Line2D([], [], color=low_color, marker=low_marker, linestyle="--",
+                               markersize=7, label='Score < 3')
+    high_legend = mlines.Line2D([], [], color=high_color, marker=high_marker,
+                                markersize=8, label='Score $\geq$ 3')
+
+    ax.legend(handles=[low_legend, high_legend])
 
     ax.set_xlabel("Month")
     ax.set_ylabel("$\Delta$ Medication Rate")
 
     ax.yaxis.grid(True)
     ax.axhline(0, linewidth=2, color='black', alpha=0.4)
-    plt.title("Difference of Medication Rate")
+
+    if title is not None:
+        plt.title("Difference of Medication Rate")
+
     # plt.show()
     plt.savefig("output/{}".format(fname))
