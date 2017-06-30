@@ -3,7 +3,7 @@ import datetime
 import matplotlib.pyplot as plt
 
 import disease_groups
-from breakdown import breakdown
+from breakdown import breakdown, plot_AF_count
 from csv_reader.diagnose_csv import get_diagnoses
 from csv_reader.medication_csv import get_medications
 from csv_reader.patients_csv import get_patients
@@ -118,6 +118,7 @@ def main():
     end = datetime.date(2017, 6, 1)
     # end = datetime.date(2007, 7, 1)
 
+    plot_AF_count(patients, datetime.date(2004, 1, 1), datetime.date(2017, 6, 1))
     breakdown(patients, datetime.date(2017, 1, 1))
     # compare_predictor_chads_vasc(patients, diseases, start, end, load_from_file=False)
     analyze_practitioners(patients_A, start, end, spec="CAR", diag="401", meds_start_with="B01",

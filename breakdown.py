@@ -5,6 +5,9 @@ from matplotlib import pyplot as plt
 from collections import Counter
 from dateutil.relativedelta import relativedelta
 
+from disease_groups import atrial_fib
+from simulations.simulations import patient_month_generator
+
 
 def breakdown(patients, timestamp):
     print("Score breakdown:")
@@ -26,6 +29,22 @@ def breakdown(patients, timestamp):
     print(df)
 
     stroke_analysis(patients)
+
+
+def plot_AF_count(patients, start, end):
+    patient_counter = Counter()
+    for patient, month, _ in patient_month_generator(patients, start, end, 1):
+        if patient.has_disease_group(atrial_fib, month, chronic=True):
+            patient_counter[month] += 1
+
+    x = list(patient_counter.keys())
+    y = list(patient_counter.values())
+
+    plt.plot(x, y)
+    plt.title("Living AF patients over time")
+    plt.xlabel("Month")
+    plt.ylabel("Number of patients")
+    plt.savefig("output/AF_patients", bbox_inches='tight')
 
 
 def plot_stroke_counter(counter):
