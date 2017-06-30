@@ -9,6 +9,7 @@ from csv_reader.medication_csv import get_medications
 from csv_reader.patients_csv import get_patients
 from csv_reader.mergers import *
 from practioner_analysis.practitioner import analyze_practitioners
+from simulations.simulations import compare_predictor_chads_vasc
 
 
 def add_diseases(patients, diagnoses):
@@ -113,20 +114,22 @@ def main():
     # diseases = reduce_feature_space(diseases, diagnoses, min_frequency=10)
     # plot_disease_frequency(diseases, diagnoses)
 
-    start = datetime.date(2005, 1, 1)
     start = datetime.date(2013, 4, 1)
     end = datetime.date(2017, 6, 1)
-    # end = datetime.date(2007, 7, 1)
+    start = datetime.date(2015, 1, 1)
+    end = datetime.date(2017, 7, 1)
 
-    plot_AF_count(patients, datetime.date(2004, 1, 1), datetime.date(2017, 6, 1))
+    compare_predictor_chads_vasc(patients, diseases, start, end, load_from_file=False)
+    exit()
+
     breakdown(patients, datetime.date(2017, 1, 1))
-    # compare_predictor_chads_vasc(patients, diseases, start, end, load_from_file=False)
     analyze_practitioners(patients_A, start, end, spec="CAR", diag="401", meds_start_with="B01",
                           plot=True, fname_prefix="A_")
     analyze_practitioners(patients_B, start, end, spec="CAR", diag="401", meds_start_with="B01",
                           plot=True, fname_prefix="B_")
     # asr = find_adjusted_stroke_rate(patients, start, end)
     # print(asr)
+    plot_AF_count(patients, datetime.date(2004, 1, 1), datetime.date(2017, 6, 1))
 
 if __name__ == "__main__":
     main()
