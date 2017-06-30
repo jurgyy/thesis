@@ -82,10 +82,8 @@ def plot(practitioner_data, split_date, mva, fname, legend=None, title=None):
     lines_high = []
     lines_low = []
 
-    i = 0
-    for high, high_dates, low, low_dates in practitioner_data.values():
+    for i, (high, high_dates, low, low_dates) in enumerate(practitioner_data.values()):
         c = colors[i % len(colors)]
-        i += 1
 
         plt.scatter(high_dates, high, color=c, marker='.')
         plt.scatter(low_dates, low, color=c, marker='x')
@@ -105,6 +103,7 @@ def plot(practitioner_data, split_date, mva, fname, legend=None, title=None):
 
     if split_date is not None:
         ax.axvline(split_date, linestyle=":", color="black", label='_nolegend_')
+        ax.text(split_date, 0, " Start CDSS", ha="left", va="bottom")
 
     style_legend = ax.legend([lines_high[0][0], lines_low[0][0]], ["Score $\geq$ 3", "Score < 3"], loc=3)
 
@@ -158,8 +157,8 @@ def plot_difference(grouped_data, split_date, mva, fname, title=None):
         x_low.append(date)
         y_low.append(cdss_low[i] - no_low[index])
 
-    low_color, low_marker = colors[2], "x"
-    high_color, high_marker = colors[2], "."
+    low_color, low_marker = colors[3], "x"
+    high_color, high_marker = colors[4], "."
     if mva is not None:
         plt.plot(x_low[:-(mva - 1)], moving_average(y_low, n=mva), "--", color=low_color,
                  label="Score < 3")
@@ -174,6 +173,7 @@ def plot_difference(grouped_data, split_date, mva, fname, title=None):
 
     if split_date is not None:
         ax.axvline(split_date, linestyle=":", color="black", label='_nolegend_')
+        ax.text(split_date, ax.get_ylim()[0], " Start CDSS", ha="left", va="bottom")
 
     low_legend = mlines.Line2D([], [], color=low_color, marker=low_marker, linestyle="--",
                                markersize=7, label='Score < 3')
