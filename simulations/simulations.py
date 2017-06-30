@@ -1,3 +1,4 @@
+import datetime
 from collections import Counter
 
 import numpy as np
@@ -59,10 +60,32 @@ def get_random_subset(patients, test_rate=0.30, seed=None):
     return np.array(patient_nrs[0:test_size]).tolist()
 
 
+def get_patient_subset(patients, stroke_patient_rate=0.5, seed=None):
+    positive_patients = []
+    negative_patients = []
+
+    for patient_nr, patient in patients.items():
+        if patient.has_disease_group(stroke_diseases, datetime.date(2050, 1, 1), chronic=True):
+            positive_patients.append(patient_nr)
+        else:
+            negative_patients.append(patient_nr)
+
+    half_learn_size = int(len(positive_patients) * stroke_patient_rate)
+
+    if seed:
+        random.seed(seed)
+    random.shuffle(positive_patients)
+    random.shuffle(negative_patients)
+
+    learn_set = positive_patients[:half_learn_size] + negative_patients[0:half_learn_size]
+    return learn_set
+
+
 def patient_month_generator(patients, start, end, step=1, test_rate=.20):
     sim_date = start
     # TODO: move split to other somewhere else
-    test_set = get_random_subset(patients, test_rate=test_rate)
+    # test_set = get_random_subset(patients, test_rate=test_rate)
+    test_set = get_patient_subset(patients)
     while sim_date < end:
         for patient_nr, patient in patients.items():
             # Excluded patients are either:
@@ -76,7 +99,7 @@ def patient_month_generator(patients, start, end, step=1, test_rate=.20):
                     # patient.has_medication_group("B01", sim_date):  # Antithrombotic Agents start with B01
                 continue
 
-            yield patient, sim_date, patient_nr in test_set
+            yield patient, sim_date, patient_nr not in test_set
 
         sim_date += relativedelta(months=+step)
 
@@ -88,13 +111,13 @@ def simulate_predictor(patients, diseases, start, end):
     start_timer = timeit.default_timer()
     print("Simulating Predictor...\nStart Date: {}\nEnd Date: {}".format(start, end))
 
-    # learn_data["Data Labels"] = get_feature_labels(diseases, days_since=False)
-    learn_data["Data Labels"] = ["C", "H", "D", "S", "V", "Gender", "Age"]
+    learn_data["Data Labels"] = get_feature_labels(diseases, days_since=False)
+    # learn_data["Data Labels"] = ["C", "H", "D", "S", "V", "Gender", "Age"]
     test_data["Data Labels"] = learn_data["Data Labels"]
 
     for patient, sim_date, in_test_set in patient_month_generator(patients, start, end):
-        # features, target = get_feature_slice(diseases, patient, sim_date, days_since=False)
-        features, target = get_chads_vasc_feature(patient, sim_date)
+        features, target = get_feature_slice(diseases, patient, sim_date, days_since=False)
+        # features, target = get_chads_vasc_feature(patient, sim_date)
         if in_test_set:
             test_data["Data"].append(features)
             test_data["Target"].append(target)
