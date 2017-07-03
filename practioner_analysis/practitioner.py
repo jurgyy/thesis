@@ -2,8 +2,8 @@ import datetime
 
 from dateutil.relativedelta import relativedelta
 
-from cdss_practitioners import cdss_practitioners
 from disease import Disease
+from practioner_analysis.cdss_practitioners import cdss_practitioners
 from practioner_analysis.medication_rate import MedicationRate
 from practioner_analysis.plot import plot_data, group_data, plot_difference
 

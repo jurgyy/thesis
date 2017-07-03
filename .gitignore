@@ -8,4 +8,4 @@ output/
 data/
 graphviz/
 examples/sorting.py
-cdss_practitioners.py
+practioner_analysis/cdss_practitioners.py
