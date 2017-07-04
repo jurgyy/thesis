@@ -1,11 +1,7 @@
 import numpy as np
 from sklearn import ensemble
-from sklearn.feature_selection import SelectFromModel
-from sklearn.model_selection import train_test_split
-# from sklearn.cross_validation import cross_val_score
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import f1_score
-from sklearn.metrics.classification import UndefinedMetricWarning
 
 from learning.confusion_matrix import ConfusionMatrix
 
@@ -55,54 +51,46 @@ def main():
 
     class_weight = None
     clf = ensemble.RandomForestClassifier(n_estimators=100, n_jobs=-1, class_weight=class_weight)
-
-    cutoffs = np.arange(0.1, 0.9, 0.1)
-    highest_mean, highest_cutoff = 0, 0
-    for c in cutoffs:
-        validated = cross_val_score(clf, learn_x, learn_y, cv=10, scoring=custom_f1(c))
-        mean = np.mean(validated)
-        if mean > highest_mean:
-            highest_mean = mean
-            highest_cutoff = c
-
-    if highest_cutoff == 0:
-        raise NotImplementedError
-
-    print("Cutoff: {} with mean: {}".format(highest_cutoff, highest_mean))
-
     clf.fit(learn_x, learn_y)
-    # clf.fit(learn_x, learn_y, sample_weight=[1 if i == 1 else 1 for i in learn_y])
 
-    # labels = list(range(len(learn_x[0])))
-    # importances = clf.feature_importances_
-    # importance_threshold = 0.1
-    #
-    # importances, labels = zip(*sorted(zip(importances, labels), reverse=True))
-    # important_features = [l for (l, v) in zip(labels, importances) if v > importance_threshold]
-    # for l, v in zip(labels, importances):
-    #     if v < importance_threshold:
-    #         break
-    #     print(l, v)
-    #
-    # print("Important features: {}".format(important_features))
+    predict_y = clf.predict(test_x)
+    cf_pre = ConfusionMatrix(test_y, predict_y, name="Priory")
+    print("Pre F1 Score: {}".format(cf_pre.f1_score()))
 
-    # predictions = clf.predict(test_x)
-    predictions = [1 if p[1] > highest_cutoff else 0 for p in clf.predict_proba(test_x)]
-    cf_all = ConfusionMatrix(test_y, predictions, name="All features")
-    cf_all.dump()
+    importances, labels = zip(*sorted(zip(clf.feature_importances_, range(len(learn_x[0]))), reverse=True))
+    feature_rate = 0.2
+    num_features = int(len(importances) * feature_rate)
+    exclude_labels = labels[num_features:]
+    learn_x = np.delete(learn_x, exclude_labels, axis=1)
+    test_x = np.delete(test_x, exclude_labels, axis=1)
+    clf.fit(learn_x, learn_y)
 
-    # sfm = SelectFromModel(clf, threshold=importance_threshold)
-    # sfm.fit(learn_x, learn_y)
-    #
-    # learn_x_imp = sfm.transform(learn_x)
-    # test_x_imp = sfm.transform(test_x)
-    # clf_imp = ensemble.RandomForestClassifier(n_estimators=100, n_jobs=-1, class_weight=class_weight)
-    # clf_imp.fit(learn_x_imp, learn_y, sample_weight=[2 if i == 1 else 1 for i in learn_y])
-    #
-    # predictions_imp = clf_imp.predict(test_x_imp)
-    #
-    # cf_imp = ConfusionMatrix(test_y, predictions_imp, name="Important features")
-    # cf_imp.dump()
+    predict_y = clf.predict(test_x)
+    cf_mid = ConfusionMatrix(test_y, predict_y, name="Feature Selection")
+    print("Feature Selection F1 Score: {}".format(cf_mid.f1_score()))
+
+    cutoff = 0.1
+    if cutoff is None:
+        cutoffs = np.arange(0.1, 0.9, 0.1)
+        highest_mean, highest_cutoff = 0, 0
+        for c in cutoffs:
+            validated = cross_val_score(clf, learn_x, learn_y, cv=10, scoring=custom_f1(c))
+            mean = np.mean(validated)
+            if mean > highest_mean:
+                highest_mean = mean
+                highest_cutoff = c
+
+        if highest_cutoff == 0:
+            raise NotImplementedError
+
+        print("Cutoff: {} with mean: {}".format(highest_cutoff, highest_mean))
+        cutoff = highest_cutoff
+
+    predictions = [1 if p[1] > cutoff else 0 for p in clf.predict_proba(test_x)]
+    cf_post = ConfusionMatrix(test_y, predictions, name="Cutoff and Selection")
+    print("Post F1 Score: {}".format(cf_post.f1_score()))
+    print("--------------------------------------------")
+    cf_post.dump()
 
 
 if __name__ == "__main__":
