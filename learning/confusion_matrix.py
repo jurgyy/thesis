@@ -61,7 +61,7 @@ class ConfusionMatrix:
 
     def dump(self):
         if self.name:
-            print(self.name)
+            print("-------------- {} --------------".format(self.name))
         print("Population Size:.......................{}".format(self.population))
         print("")
         print("Condition Positive:....................{}".format(self.c_p))
