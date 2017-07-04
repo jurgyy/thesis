@@ -38,11 +38,9 @@ def get_feature_slice(diseases, patient, sim_date, days_since=True):
     return x, y
 
 
-def get_feature_labels(diseases, days_since=True):
+def get_feature_labels(diseases):
     """ Make sure that this function is in line with get_feature_slice() """
     labels = [str(d) for d in diseases]
-    # if days_since:
-    #     labels += ["days since {}".format(d) for d in diseases]
     labels += ["Gender", "Age"]
 
     return labels
@@ -104,19 +102,19 @@ def patient_month_generator(patients, start, end, step=1, test_rate=.20):
         sim_date += relativedelta(months=+step)
 
 
-def simulate_predictor(patients, diseases, start, end):
+def simulate_predictor(patients, diseases, start, end, day_since=True):
     learn_data = {"Data": [], "Target": []}
     test_data = {"Data": [], "Target": []}
 
     start_timer = timeit.default_timer()
     print("Simulating Predictor...\nStart Date: {}\nEnd Date: {}".format(start, end))
 
-    learn_data["Data Labels"] = get_feature_labels(diseases, days_since=False)
+    learn_data["Data Labels"] = get_feature_labels(diseases)
     # learn_data["Data Labels"] = ["C", "H", "D", "S", "V", "Gender", "Age"]
     test_data["Data Labels"] = learn_data["Data Labels"]
 
     for patient, sim_date, in_test_set in patient_month_generator(patients, start, end):
-        features, target = get_feature_slice(diseases, patient, sim_date, days_since=False)
+        features, target = get_feature_slice(diseases, patient, sim_date, days_since=day_since)
         # features, target = get_chads_vasc_feature(patient, sim_date)
         if in_test_set:
             test_data["Data"].append(features)
