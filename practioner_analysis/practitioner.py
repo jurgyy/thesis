@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 from disease import Disease
 from practioner_analysis.cdss_practitioners import cdss_practitioners
 from practioner_analysis.medication_rate import MedicationRate
-from practioner_analysis.plot import plot_data, group_data, plot_difference
+from practioner_analysis.plot import plot_data, group_data, plot_difference, plot_medication_breakdown
 
 
 def get_month_bins(start, end, bin_size):
@@ -77,10 +77,10 @@ def analyze_practitioners(patients, start, end, meds_start_with, bin_months=1, *
             i += 1
 
         score = patient.calculate_chads_vasc(diagnosis.start_date)
-        has_medication = patient.has_medication_group(meds_start_with, diagnosis.start_date) \
-                      or patient.has_medication_group(meds_start_with, diagnosis.start_date + relativedelta(days=+1))
+        medication = patient.has_medication_group(meds_start_with, diagnosis.start_date, which=True) \
+                  or patient.has_medication_group(meds_start_with, diagnosis.start_date + relativedelta(days=+1), which=True)
 
-        data[diagnosis.practitioner][date_bins[i]].update(score, has_medication)
+        data[diagnosis.practitioner][date_bins[i]].update(score, medication)
 
     if kwargs.get("plot"):
         print("plotting...")
@@ -97,7 +97,7 @@ def analyze_practitioners(patients, start, end, meds_start_with, bin_months=1, *
 
         fname = prefix + "Medication Rate Grouped"
         title = "Medication rate over time grouped by use of CDSS"
-        plot_data(grouped_data, split_date=split_date, mva=mva, fname=fname, title=title, legend=grouped_data.keys())
+        plot_medication_breakdown(grouped_data, split_date=split_date, mva=mva, fname=fname, title=title, legend=grouped_data.keys())
 
         fname = prefix + "Medication Rate Difference"
         title = "Difference in medication rate over time grouped by score"
