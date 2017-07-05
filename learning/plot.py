@@ -1,6 +1,7 @@
 import pydot
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import markers
 from sklearn.tree import export_graphviz
 
 
@@ -37,6 +38,10 @@ def plot_trees(clf, labels, n=3):
         graph.write_png('output/new_tree_{}.png'.format(i), prog="graphviz/bin/dot.exe")
 
 
+def round_nearest(num, order):
+    return np.round(num * order) / order
+
+
 def plot_surface(clf, x, y, labels=None, cutoff=None):
     plt.figure()
     print("Plotting surface...")
@@ -53,18 +58,39 @@ def plot_surface(clf, x, y, labels=None, cutoff=None):
     Z = clf.predict_proba(np.c_[xx.ravel(), yy.ravel()])[:, 1]
     Z = Z.reshape(xx.shape)
 
-    cs = plt.contourf(xx, yy, Z, cmap=plt.cm.coolwarm)
+    cs = plt.contourf(xx, yy, Z, np.arange(0, 1, .02), vmin=0, vmax=1, cmap=plt.cm.coolwarm)
     cbar = plt.colorbar(cs)
-    cbar.ax.set_ylabel('Probability')
+    cbar.ax.set_ylim(0, 1)
+    cbar.ax.set_ylabel('Probability $y = 1$')
     if cutoff is not None:
-        cs_lines = plt.contour(cs, levels=[cutoff], colors='black')
+        cs_lines = plt.contour(cs, levels=[cutoff], style="--", colors='black')
         cbar.add_lines(cs_lines)
 
-    plt.scatter(x[:, 0], x[:, 1], c=y, cmap=plt.cm.Paired, alpha=0.2)
+        cbar_labels = [w.get_text() for w in cbar.ax.get_yticklabels()]
+        cbar_locs = [round_nearest(v, 20) for v in cbar.ax.get_yticks()]
+        print(cutoff, cbar_locs)
+        if cutoff in cbar_locs:
+            i = cbar_locs.index(cutoff)
+            cbar_labels[i] = "{} {}".format(cbar_labels[i], "Cutoff")
+        else:
+            cbar_locs.append(cutoff)
+            cbar_labels.append("Cutoff")
+
+        cbar.set_ticklabels(cbar_labels)
+        cbar.set_ticks(cbar_locs)
+
+    # TODO: optimize
+    x0 = [v for v, w in zip(x[:, 0], y) if w == 0]
+    y0 = [v for v, w in zip(x[:, 1], y) if w == 0]
+    x1 = [v for v, w in zip(x[:, 0], y) if w == 1]
+    y1 = [v for v, w in zip(x[:, 1], y) if w == 1]
+    plt.scatter(x0, y0, c=plt.cm.Paired(0), label="No Stroke")
+    plt.scatter(x1, y1, c=plt.cm.Paired(11), label="Stroke")
+    legend = plt.legend(bbox_to_anchor=(1.6, 1))
 
     if labels is not None:
         plt.xlabel(labels[indexes[0]])
         plt.ylabel(labels[indexes[1]])
 
     plt.title("Surface plot of two most important features")
-    plt.savefig("output/surface.png", bbox_inches='tight')
+    plt.savefig("output/surface.png", bbox_extra_artists=(legend,), bbox_inches='tight')

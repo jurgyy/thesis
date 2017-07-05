@@ -84,5 +84,5 @@ def predict(learn_x, learn_y, test_x, test_y, labels, n_features=.2, cutoff=.1, 
         except:
             print("Error plotting trees. Continuing...")
 
-        plot_surface(clf, learn_x, learn_y, labels=labels)
+        plot_surface(clf, learn_x, learn_y, labels=labels, cutoff=cutoff)
     return cf
