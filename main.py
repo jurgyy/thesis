@@ -10,6 +10,7 @@ from csv_reader.patients_csv import get_patients
 from csv_reader.mergers import *
 from practioner_analysis.practitioner import analyze_practitioners
 from simulations.simulations import compare_predictor_chads_vasc
+import pickle
 
 
 def add_diseases(patients, diagnoses):
@@ -96,17 +97,37 @@ def get_chads_vasc_diseases():
            disease_groups.chads_vasc_h
 
 
-def main():
-    patients_A, diagnoses_A, medications_A = prepare_data("msc_A", sep='\t')
-    patients_B, diagnoses_B, medications_B = prepare_data("msc_B", sep='\t')
+def pickle_data(data, fname):
+    pickle.dump(data, open("output/{}.pkl".format(fname), "wb"))
 
-    print("Merging data...")
-    patients = merge_data(patients_A, patients_B)
-    diagnoses = merge_data(diagnoses_A, diagnoses_B)
-    medications = merge_data(medications_A, medications_B)
 
-    print("Total number of patients: {}".format(len(patients.keys())))
-    print("Number of female patients: {}".format(sum([1 if p.is_female() else 0 for p in patients.values()])))
+def unpickle_data(fname):
+    return pickle.load(open("output/{}.pkl".format(fname), "rb"))
+
+
+def main(load_pickle=True):
+    if load_pickle:
+        print("Loading data from Pickle files...")
+        patients_A, diagnoses_A, medications_A = unpickle_data("data_A")
+        patients_B, diagnoses_B, medications_B = unpickle_data("data_B")
+        patients, diagnoses, medications = unpickle_data("data_combined")
+        print("Done.")
+    else:
+        patients_A, diagnoses_A, medications_A = prepare_data("msc_A", sep='\t')
+        patients_B, diagnoses_B, medications_B = prepare_data("msc_B", sep='\t')
+
+        print("Merging data...")
+        patients = merge_data(patients_A, patients_B)
+        diagnoses = merge_data(diagnoses_A, diagnoses_B)
+        medications = merge_data(medications_A, medications_B)
+
+        print("Total number of patients: {}".format(len(patients.keys())))
+        print("Number of female patients: {}".format(sum([1 if p.is_female() else 0 for p in patients.values()])))
+
+        print("Pickling data...")
+        pickle_data([patients_A, diagnoses_A, medications_A], "data_A")
+        pickle_data([patients_B, diagnoses_B, medications_B], "data_B")
+        pickle_data([patients, diagnoses, medications], "data_combined")
 
     diseases = get_all_diseases(diagnoses)
 
@@ -116,16 +137,18 @@ def main():
 
     start = datetime.date(2013, 4, 1)
     end = datetime.date(2017, 6, 1)
-    start = datetime.date(2015, 1, 1)
-    end = datetime.date(2017, 7, 1)
+    start_prac = datetime.date(2013, 4, 1)
+    end_prac = datetime.date(2017, 6, 1)
+    start_ml = datetime.date(2015, 1, 1)
+    end_ml = datetime.date(2015, 6, 1)
 
-    compare_predictor_chads_vasc(patients, diseases, start, end, load_from_file=False)
+    analyze_practitioners(patients_A, start_prac, end_prac, spec="CAR", diag="401", meds_start_with="B01",
+                          plot=True, fname_prefix="A_")
+    # compare_predictor_chads_vasc(patients, diseases, start_ml, end_ml, load_from_file=False)
     exit()
 
     breakdown(patients, datetime.date(2017, 1, 1))
-    analyze_practitioners(patients_A, start, end, spec="CAR", diag="401", meds_start_with="B01",
-                          plot=True, fname_prefix="A_")
-    analyze_practitioners(patients_B, start, end, spec="CAR", diag="401", meds_start_with="B01",
+    analyze_practitioners(patients_B, start_prac, end_prac, spec="CAR", diag="401", meds_start_with="B01",
                           plot=True, fname_prefix="B_")
     # asr = find_adjusted_stroke_rate(patients, start, end)
     # print(asr)
