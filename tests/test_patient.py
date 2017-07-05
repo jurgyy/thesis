@@ -168,6 +168,10 @@ class TestPatientMedication(TestCase):
         self.assertTrue(self.patient.has_medication_group("A0", d(2010, 1, 1)))
         self.assertFalse(self.patient.has_medication_group("A0", d(2010, 1, 2)))
 
+        self.assertFalse(self.patient.has_medication_group("A0", d(2009, 12, 31), which=True))
+        self.assertEqual("A00AA00", self.patient.has_medication_group("A0", d(2010, 1, 1), which=True))
+        self.assertEqual("B00BB01", self.patient.has_medication_group("B0", d(2010, 8, 3), which=True))
+
 
 class TestPatientShouldHaveAC(TestCase):
     patient = Patient(1, 'm', d(1937, 5, 14), d(2017, 12, 31))

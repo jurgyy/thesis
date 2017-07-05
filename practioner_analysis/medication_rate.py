@@ -7,6 +7,7 @@ class MedicationRate:
     def __init__(self):
         self.total = Counter()
         self.with_medication = Counter()
+        self.which_medication = Counter()
 
     def __repr__(self):
         return "MedicationRate.({}, {})".format(self.with_medication, self.total)
@@ -18,12 +19,14 @@ class MedicationRate:
         summed_rate = MedicationRate()
         summed_rate.total = self.total + other.total
         summed_rate.with_medication = self.with_medication + other.with_medication
+        summed_rate.which_medication = self.which_medication + other.which_medication
         return summed_rate
 
-    def update(self, score, has_medication):
+    def update(self, score, medication):
         self.total[score] += 1
-        if has_medication:
+        if medication:
             self.with_medication[score] += 1
+            self.which_medication[medication] += 1
 
     def get_rates(self):
         total = np.array([])
