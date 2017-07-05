@@ -33,7 +33,7 @@ class Patient:
         if self.last_diagnosis is None or diagnosis.start_date > self.last_diagnosis.start_date:
             self.last_diagnosis = diagnosis
 
-    def get_current_diseases(self, timestamp):
+    def get_current_diseases(self, timestamp):  # Unused
         current_diseases = set()
         for diagnosis in self.diagnoses.iter_diagnoses():
             if diagnosis.start_date <= timestamp <= diagnosis.end_date:
@@ -163,14 +163,14 @@ class Patient:
                 return True
         return False
 
-    def has_medication_group(self, starts_with, sim_date):
+    def has_medication_group(self, starts_with, sim_date, which=False):
         for code, medications in self.medications.items():
             if not code.startswith(starts_with):
                 continue
 
             for m in medications:
                 if m.start_date <= sim_date <= m.end_date:
-                    return True
+                    return True if not which else code
         return False
 
 
