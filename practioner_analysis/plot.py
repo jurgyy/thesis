@@ -200,6 +200,9 @@ def plot_medication_breakdown(data, split_date, mva, fname, legend=None, title=N
 
     fig = plt.figure(figsize=(8, 8))
     ax1 = fig.add_subplot(311)
+    ax2 = fig.add_subplot(312, sharex=ax1)
+    ax3 = fig.add_subplot(313, sharex=ax1)
+    axes = [ax1, ax2, ax3]
 
     lines_high = []
     lines_low = []
@@ -207,24 +210,25 @@ def plot_medication_breakdown(data, split_date, mva, fname, legend=None, title=N
     for i, (high, high_dates, low, low_dates) in enumerate(practitioner_data.values()):
         c = colors[i % len(colors)]
 
-        plt.scatter(high_dates, high, color=c, marker='.')
-        plt.scatter(low_dates, low, color=c, marker='x')
+        ax1.scatter(high_dates, high, color=c, marker='.')
+        ax1.scatter(low_dates, low, color=c, marker='x')
 
         if mva is not None:
             pre = int(mva / 2)
             post = mva - pre
-            l1 = plt.plot(high_dates[pre:-(post - 1)], moving_average(high, n=mva), color=c)
-            l2 = plt.plot(low_dates[pre:-(post - 1)], moving_average(low, n=mva),
+            l1 = ax1.plot(high_dates[pre:-(post - 1)], moving_average(high, n=mva), color=c)
+            l2 = ax1.plot(low_dates[pre:-(post - 1)], moving_average(low, n=mva),
                           "--", color=c, label='_nolegend_')
         else:
-            l1 = plt.plot(high_dates, high, color=c)
-            l2 = plt.plot(low_dates, low, "--", color=c, label='_nolegend_')
+            l1 = ax1.plot(high_dates, high, color=c)
+            l2 = ax1.plot(low_dates, low, "--", color=c, label='_nolegend_')
 
         lines_high.append(l1)
         lines_low.append(l2)
 
     if split_date is not None:
-        ax1.axvline(split_date, linestyle=":", color="black", label='_nolegend_')
+        for ax in axes:
+            ax.axvline(split_date, linestyle=":", color="black", label='_nolegend_')
         ax1.text(split_date, 0, " Start CDSS", ha="left", va="bottom")
 
     style_legend = ax1.legend([lines_high[0][0], lines_low[0][0]], ["Score $\geq$ 3", "Score < 3"], loc=3)
@@ -235,27 +239,27 @@ def plot_medication_breakdown(data, split_date, mva, fname, legend=None, title=N
     else:
         ax1.legend(legend, loc=2)
 
-    plt.gca().add_artist(style_legend)
+    ax1.add_artist(style_legend)
 
-    ax1.set_xlabel("Month")
+    if title is not None:
+        ax1.set_title(title)
     ax1.set_ylabel("Medication Rate")
 
-    ax1.yaxis.grid(True)
-    ax1.set_ylim(0, 1)
+    for ax in axes:
+        ax.yaxis.grid(True)
+        ax.set_axisbelow(True)
+        ax.set_ylim(0, 1)
 
-    ax2 = fig.add_subplot(312, sharex=ax1)
-    ax3 = fig.add_subplot(313, sharex=ax1)
-    axes = [ax2, ax3]
+    label_table = np.array([("B01AA", "VKA", colors[0]),
+                            ("B01AB", "Heparin", colors[1]),
+                            ("B01AC", "Platelet", colors[2]),
+                            ("B01AD", "Enzymes", colors[3]),
+                            ("B01AE", "DTIs", colors[4]),
+                            ("B01AF", "xabans", colors[5]),
+                            ("B01AX", "B01AX", colors[6]),
+                            ("Other", "Other", colors[7])])
 
-    for (group, mr_dict), ax in zip(data.items(), axes):
-        label_table = np.array([("B01AA", "VKA", colors[0]),
-                                ("B01AB", "Heparin", colors[1]),
-                                ("B01AC", "Platelet", colors[2]),
-                                ("B01AD", "Enzymes", colors[3]),
-                                ("B01AE", "DTIs", colors[4]),
-                                ("B01AF", "xabans", colors[5]),
-                                ("B01AX", "B01AX", colors[6]),
-                                ("Other", "Other", colors[7])])
+    for (group, mr_dict), ax in zip(data.items(), [ax2, ax3]):
         months = list(mr_dict.keys())
         bars = []
         for month, medication_rate in mr_dict.items():
@@ -273,24 +277,35 @@ def plot_medication_breakdown(data, split_date, mva, fname, legend=None, title=N
 
             bars.append(bar)
 
+        bs = []
+        ls = []
         bottom = np.zeros(len(months))
         for i, y in enumerate(np.array(bars).T):
             plot_months = np.array(months)
+            plot_bottom = np.array(bottom)
+            plot_y = np.array(y)
             for j in np.where(y == 0)[0].tolist()[::-1]:
-                np.delete(y, j)
-                np.delete(plot_months, j)
+                plot_y = np.delete(plot_y, j)
+                plot_months = np.delete(plot_months, j)
+                plot_bottom = np.delete(plot_bottom, j)
 
-            if len(y) == 0:
+            if len(plot_y) == 0:
                 continue
 
             l = label_table.T[1][i]
             c = label_table.T[2][i]
-            ax.bar(months, y, bottom=bottom, width=25, label=l, color=c)
+            ls.append(l)
+
+            b = ax.bar(plot_months, plot_y, bottom=plot_bottom, width=25, color=c)
+            bs.append(b)
+
             bottom += y
 
-        ax.legend()
+        ax.set_title(group)
+        ax.set_ylabel("Rate Medication Group")
+        ax.legend(bs, ls)
 
-    if title is not None:
-        fig.suptitle(title)
+    axes[-1].set_xlabel("Month")
 
+    fig.tight_layout()
     plt.savefig("output/{}".format(fname))
