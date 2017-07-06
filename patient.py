@@ -1,3 +1,5 @@
+import datetime
+
 from dateutil.relativedelta import relativedelta
 
 from disease_groups import *
@@ -164,13 +166,21 @@ class Patient:
         return False
 
     def has_medication_group(self, starts_with, sim_date, which=False):
+        last = None
+        last_date = datetime.date(datetime.MINYEAR, 1, 1)
         for code, medications in self.medications.items():
             if not code.startswith(starts_with):
                 continue
 
             for m in medications:
                 if m.start_date <= sim_date <= m.end_date:
-                    return True if not which else code
+                    if not which:
+                        return True
+                    elif m.start_date > last_date:
+                        last_date = m.start_date
+                        last = code
+        if which and last is not None:
+            return last
         return False
 
 
