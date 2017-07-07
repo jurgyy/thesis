@@ -162,23 +162,25 @@ def find_adjusted_stroke_rate(patients, start, end):
 
 
 def export_data(learn, test):
-    np.save("output/data", learn["Data"] + test["Data"])
-    np.save("output/target", learn["Target"] + test["Target"])
-    np.save("output/labels", learn["Data Labels"])
+    np.save("output/learning/learn_features", learn["Data"])
+    np.save("output/learning/test_features", test["Data"])
+    np.save("output/learning/learn_target", learn["Target"])
+    np.save("output/learning/test_target", test["Target"])
+    np.save("output/learning/labels", learn["Data Labels"])
 
 
-def import_data(test_rate=0.2):
-    data = np.load("output/data.npy")
-    target = np.load("output/target.npy")
-    labels = np.load("output/labels.npy")
+def import_data():
+    learn_features = np.load("output/learning/learn_features.npy")
+    test_features = np.load("output/learning/test_features.npy")
+    learn_target = np.load("output/learning/learn_target.npy")
+    test_target = np.load("output/learning/test_target.npy")
+    labels = np.load("output/learning/labels.npy")
     
-    split = 1 - round(len(data) * test_rate)
-
-    learn = {"Data": data[0:split].tolist(),
-             "Target": target[0:split].tolist(),
+    learn = {"Data": learn_features.tolist(),
+             "Target": learn_target.tolist(),
              "Data Labels": labels}
-    test = {"Data": data[split:].tolist(),
-            "Target": target[split:].tolist(),
+    test = {"Data": test_features.tolist(),
+            "Target": test_target.tolist(),
             "Data Labels": labels}
 
     return learn, test
@@ -187,23 +189,25 @@ def import_data(test_rate=0.2):
 def compare_predictor_chads_vasc(patients, diseases, start, end, load_from_file=False):
     seed = random.randint(0, 1000000)
 
-    random.seed(seed)
-    chads_vasc_data = simulate_chads_vasc(patients, start, end, only_test_set=True)
+    # TODO: Turn on:
+    # random.seed(seed)
+    # chads_vasc_data = simulate_chads_vasc(patients, start, end, only_test_set=True)
 
     if load_from_file:
+        print("Loading learn and test set from npy files...")
         learn, test = import_data()
     else:
         random.seed(seed)
-        learn, test = simulate_predictor(patients, diseases, start, end)
+        learn, test = simulate_predictor(patients, diseases, start, end, day_since=True)
         export_data(learn, test)
 
-    print("CHADS-VASc...")
-    cf_chads_vasc = analyze_chads_vasc(chads_vasc_data)
+    # print("CHADS-VASc...")
+    # cf_chads_vasc = analyze_chads_vasc(chads_vasc_data)
 
     print("Predicting...")
     cf_prediction = predict(learn["Data"], learn["Target"],
                             test["Data"], test["Target"],
-                            learn["Data Labels"], plot=True)
+                            learn["Data Labels"], plot=True, cutoff=None)
 
-    cf_chads_vasc.dump()
+    # cf_chads_vasc.dump()
     cf_prediction.dump()
