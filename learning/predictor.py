@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn import ensemble
 from sklearn.model_selection import cross_val_score
-from sklearn.metrics import f1_score
+from sklearn import metrics
 
 from learning.confusion_matrix import ConfusionMatrix
 from learning.plot import plot_features, plot_trees, plot_surface
@@ -15,7 +15,10 @@ def analyze_chads_vasc(data):
 def custom_f1(cutoff):
     def f1_cutoff(clf, x, y):
         ypred = np.array(clf.predict_proba(x)[:, 1] > cutoff).astype(int)
-        return f1_score(y, ypred)
+
+        # cf = ConfusionMatrix(ypred, y)
+
+        return metrics.recall_score(y, ypred)
 
     return f1_cutoff
 
@@ -48,6 +51,8 @@ def predict(learn_x, learn_y, test_x, test_y, labels, n_features=.2, cutoff=.1, 
 
         # In the unbalanced data set the cutoff will most likely be below .5,
         # to safe time, no cutoffs > .5 are checked.
+
+        print(np.mean(cross_val_score(clf, learn_x, learn_y, cv=10, scoring='roc_auc')))
         cutoffs = np.arange(0.05, 0.5, 0.05)
         highest_mean, highest_cutoff = 0, 0
         for c in cutoffs:
