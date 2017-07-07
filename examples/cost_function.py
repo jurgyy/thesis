@@ -57,7 +57,7 @@ def plot_functions():
     plt.xlim(0, 1)
     plt.ylim(0, 1.1)
 
-    plt.savefig("output/cost_functions.png", bbox_inches='tight')
+    plt.savefig("../output/examples/cost_functions.png", bbox_inches='tight')
 
 
 def calculate_cost(node_pair, classes, cost_function=gini_index):
@@ -157,6 +157,8 @@ def get_random_data(n):
 
 
 if __name__ == "__main__":
+    plot_functions()
+
     # data = get_random_data(4000)
     data = get_test_data()
 

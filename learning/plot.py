@@ -23,7 +23,7 @@ def plot_features(clf, labels):
     plt.title("Feature Importance")
     plt.yticks(xs, labels)
     plt.ylim(-1, len(labels) + 1)
-    plt.savefig("output/feature_importance.png", bbox_inches='tight')
+    plt.savefig("output/learning/feature_importance.png", bbox_inches='tight')
 
 
 def plot_trees(clf, labels, n=3):
@@ -33,9 +33,9 @@ def plot_trees(clf, labels, n=3):
                         feature_names=labels,
                         filled=True,
                         rounded=True,
-                        out_file="output/tree.dot")
-        (graph,) = pydot.graph_from_dot_file('output/tree.dot')
-        graph.write_png('output/new_tree_{}.png'.format(i), prog="graphviz/bin/dot.exe")
+                        out_file="output/learning/tree.dot")
+        (graph,) = pydot.graph_from_dot_file('output/learning/tree.dot')
+        graph.write_png('output/learning/new_tree_{}.png'.format(i), prog="graphviz/bin/dot.exe")
 
 
 def round_nearest(num, order):
@@ -93,4 +93,4 @@ def plot_surface(clf, x, y, labels=None, cutoff=None):
         plt.ylabel(labels[indexes[1]])
 
     plt.title("Surface plot of two most important features")
-    plt.savefig("output/surface.png", bbox_extra_artists=(legend,), bbox_inches='tight')
+    plt.savefig("output/learning/surface.png", bbox_extra_artists=(legend,), bbox_inches='tight')

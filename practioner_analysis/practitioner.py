@@ -119,7 +119,7 @@ def analyze_practitioners(patients, start, end, meds_start_with, bin_months=1, *
         data[diagnosis.practitioner][date_bins[i]].update(score, medication)
 
     df = pd.DataFrame(regression_data)
-    df.to_csv("output/{}regression_data.csv".format(kwargs.get("fname_prefix")), sep=";")
+    df.to_csv("output/practitioner/{}regression_data.csv".format(kwargs.get("fname_prefix")), sep=";")
 
     if kwargs.get("plot"):
         print("plotting...")
@@ -136,6 +136,7 @@ def analyze_practitioners(patients, start, end, meds_start_with, bin_months=1, *
 
         fname = prefix + "Medication Rate Grouped"
         title = "Medication rate over time grouped by use of CDSS"
+        plot_data(grouped_data, split_date=split_date, mva=mva, fname=fname, title=title, legend=grouped_data.keys())
         plot_medication_breakdown(grouped_data, split_date=split_date, mva=mva, fname=fname, title=title,
                                   legend=grouped_data.keys())
 

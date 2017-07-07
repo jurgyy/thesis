@@ -33,7 +33,7 @@ def main():
     plt.title(
         r'$2 \cdot \frac{\mathrm{Precision} \cdot \mathrm{Sensitivity}}{\mathrm{Precision} + \mathrm{Sensitivity}}$'
     )
-    plt.savefig("../output/f1_score.png", bbox_inches='tight')
+    plt.savefig("../output/examples/f1_score.png", bbox_inches='tight')
 
 if __name__ == "__main__":
     main()

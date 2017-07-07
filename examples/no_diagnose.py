@@ -42,58 +42,7 @@ def plot_data(x, y, clf):
     plt.xlim(0, plot_max + 0.05)
     plt.ylim(0, plot_max + 0.05)
 
-    """
-    for l in lin:
-        min_x = 0
-        min_y = 0
-        max_x = plot_max
-        max_y = plot_max
-        last_label = None
-        last_direction = None
-        for s in l:
-            if not isinstance(s, np.int64):
-                # Splitting Nodes
-                _, d, v, label = s
-                if label == 'af':
-                    last_label = 'af'
-                    plt.plot((v, v), (min_y, max_y), c='red')
-                    if d == 'l':
-                        last_direction = 'l'
-                        max_x = v
-                    else:
-                        last_direction = 'r'
-                        min_x = v
-                elif label == 'bf':
-                    last_label = 'bf'
-                    plt.plot((min_x, max_x), (v, v), c='red')
-                    if d == 'l':
-                        last_direction = 'l'
-                        max_y = v
-                    else:
-                        last_direction = 'r'
-                        min_y = v
-                else:
-                    continue
-            else:
-                # Leaf nodes
-                pad = 0.0
-                if last_label == "af":
-                    if last_direction == "l":
-                        plt.annotate(s, xy=(v - pad, ((min_y + max_y) / 2)),
-                                     horizontalalignment="right", verticalalignment="center")
-                    else:
-                        plt.annotate(s, xy=(v + pad, ((min_y + max_y) / 2)),
-                                     horizontalalignment="left", verticalalignment="center")
-                else:
-                    if last_direction == "l":
-                        plt.annotate(s, xy=(((min_x + max_x) / 2), v - pad),
-                                     horizontalalignment="center", verticalalignment="top")
-                    else:
-                        plt.annotate(s, xy=(((min_x + max_x) / 2), v + pad),
-                                     horizontalalignment="center", verticalalignment="bottom")
-    """
-
-    plt.show()
+    plt.savefig("../output/examples/surface", bbox_inches='tight')
 
 
 def random_dif():

@@ -124,7 +124,7 @@ def plot(practitioner_data, split_date, mva, fname, legend=None, title=None):
     if title is not None:
         plt.title(title)
 
-    plt.savefig("output/{}".format(fname))
+    plt.savefig("output/practitioner/{}".format(fname))
 
 
 def plot_difference(grouped_data, split_date, mva, fname, title=None):
@@ -192,7 +192,7 @@ def plot_difference(grouped_data, split_date, mva, fname, title=None):
         plt.title("Difference of Medication Rate")
 
     # plt.show()
-    plt.savefig("output/{}".format(fname))
+    plt.savefig("output/practitioner/{}".format(fname))
 
 
 def plot_medication_breakdown(data, split_date, mva, fname, legend=None, title=None):
@@ -308,4 +308,4 @@ def plot_medication_breakdown(data, split_date, mva, fname, legend=None, title=N
     axes[-1].set_xlabel("Month")
 
     fig.tight_layout()
-    plt.savefig("output/{}".format(fname))
+    plt.savefig("output/practitioner/{}".format(fname))
