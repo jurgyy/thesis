@@ -43,6 +43,19 @@ class ConfusionMatrix:
         with np.errstate(divide='ignore', invalid='ignore'):
             return 2 * np.divide((self.ppv * self.tpr), (self.ppv + self.tpr))
 
+    def fn_score(self, n):
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return (n**2 + 1) * np.divide((self.ppv * self.tpr), (n**2 * self.ppv + self.tpr))
+
+    def mcc(self):
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return np.divide(self.t_p * self.t_n - self.f_p * self.f_n,
+                             np.sqrt((self.t_p + self.f_p) *
+                                     (self.t_p + self.f_n) *
+                                     (self.t_n + self.f_p) *
+                                     (self.t_n + self.f_n))
+                             )
+
     def calculate_matrix(self):
         t_p = f_n = f_p = t_n = 0
         for i in range(len(self.true)):
