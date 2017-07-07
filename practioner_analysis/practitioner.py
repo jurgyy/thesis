@@ -137,6 +137,7 @@ def analyze_practitioners(patients, start, end, meds_start_with, bin_months=1, *
         fname = prefix + "Medication Rate Grouped"
         title = "Medication rate over time grouped by use of CDSS"
         plot_data(grouped_data, split_date=split_date, mva=mva, fname=fname, title=title, legend=grouped_data.keys())
+        fname = prefix + "Medication Rate Grouped Complete"
         plot_medication_breakdown(grouped_data, split_date=split_date, mva=mva, fname=fname, title=title,
                                   legend=grouped_data.keys())
 
