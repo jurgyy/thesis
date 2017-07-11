@@ -1,28 +1,72 @@
 import pydot
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import patches as mpatches
 from matplotlib import markers
 from sklearn.tree import export_graphviz
 
+from disease_groups import *
 
-def plot_features(clf, labels):
+
+def plot_features(clf, labels, nlabels=25):
     print("Plotting Important features...")
     importances = clf.feature_importances_
     importances, labels = zip(*sorted(zip(importances, labels), reverse=True))
-    for i, v in enumerate(importances):
-        if v < 0.002:
-            importances = importances[:i]
-            labels = labels[:i]
-            break
+
+    if type(nlabels) == float:
+        nlabels = int(len(importances) * nlabels)
+        importances = importances[:nlabels]
+        labels = labels[:labels]
+
+        # for i, v in enumerate(importances):
+        #     if v < 0.002:
+        #         importances = importances[:i]
+        #         labels = labels[:i]
+        #         break
+    else:
+        importances = importances[:nlabels]
+        labels = labels[:nlabels]
 
     xs = range(len(importances))
 
+    groups = [(chads_vasc_c, "C", plt.cm.tab10(3)),
+              (chads_vasc_h, "H", plt.cm.tab10(4)),
+              (chads_vasc_d, "D", plt.cm.tab10(5)),
+              (chads_vasc_s, "S", plt.cm.tab10(6)),
+              (chads_vasc_v, "V", plt.cm.tab10(7))]
+
+    colors = []
+    for label in labels:
+        if label == "Age":
+            colors.append(plt.cm.tab10(1))
+            continue
+        elif label == "Gender":
+            colors.append(plt.cm.tab10(2))
+            continue
+
+        in_group = False
+        for g, letter, color in groups:
+            if in_group:
+                break
+            for disease in g:
+                if label.lower() == str(disease).lower():
+                    in_group = True
+                    colors.append(color)
+                    break
+        if not in_group:
+            colors.append(plt.cm.tab10(0))
+
+    legend_labels = ["New", "Age", "Gender"] + [letter for _, letter, _ in groups]
+
+    handles = [mpatches.Patch(color=plt.cm.tab10(i), label=legend_labels[i]) for i in range(len(legend_labels))]
+
     dpi = 100
-    plt.figure(figsize=(780 / dpi, (len(labels) * 17) / dpi), dpi=dpi)
-    plt.barh(xs, importances, align='center')
+    plt.figure(figsize=(480 / dpi, (len(labels) * 17) / dpi), dpi=dpi)
+    plt.barh(xs, importances, align='center', color=colors)
     plt.title("Feature Importance")
     plt.yticks(xs, labels)
     plt.ylim(-1, len(labels) + 1)
+    plt.legend(handles=handles)
     plt.savefig("output/learning/feature_importance.png", bbox_inches='tight')
 
 
@@ -36,6 +80,24 @@ def plot_trees(clf, labels, n=3):
                         out_file="output/learning/tree.dot")
         (graph,) = pydot.graph_from_dot_file('output/learning/tree.dot')
         graph.write_png('output/learning/new_tree_{}.png'.format(i), prog="graphviz/bin/dot.exe")
+
+
+def plot_cutoffs(cutoffs, data, ylabel=""):
+    print("Plotting cutoff box plots...")
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    ax.boxplot(data, whis='range')
+
+    ax.set_xlabel("Cutoff")
+    ax.set_ylabel(ylabel)
+    ax.set_xticklabels(cutoffs)
+    plt.title("10-fold cross validated scores with different cutoffs")
+    plt.savefig("output/learning/cutoff_boxplot", bbox_inches='tight')
+
+
+def plot_metrics(confusion_matrices):
+    pass
 
 
 def round_nearest(num, order):
@@ -68,7 +130,6 @@ def plot_surface(clf, x, y, labels=None, cutoff=None):
 
         cbar_labels = [w.get_text() for w in cbar.ax.get_yticklabels()]
         cbar_locs = [round_nearest(v, 20) for v in cbar.ax.get_yticks()]
-        print(cutoff, cbar_locs)
         if cutoff in cbar_locs:
             i = cbar_locs.index(cutoff)
             cbar_labels[i] = "{} {}".format(cbar_labels[i], "Cutoff")
