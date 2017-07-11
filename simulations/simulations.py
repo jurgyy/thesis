@@ -103,7 +103,7 @@ def patient_month_generator(patients, start, end, step=1, test_rate=.20):
 
 
 def simulate_predictor(patients, diseases, start, end, day_since=True):
-    learn_data = {"Data": [], "Target": []}
+    learn_data = {"Data": [], "Target": [], "Group": []}
     test_data = {"Data": [], "Target": []}
 
     start_timer = timeit.default_timer()
@@ -122,6 +122,7 @@ def simulate_predictor(patients, diseases, start, end, day_since=True):
         else:
             learn_data["Data"].append(features)
             learn_data["Target"].append(target)
+            learn_data["Group"].append(patient.number)
 
     stop_timer = timeit.default_timer()
     print("Time elapsed: {}".format(stop_timer - start_timer))
@@ -162,6 +163,7 @@ def find_adjusted_stroke_rate(patients, start, end):
 
 
 def export_data(learn, test):
+    np.save("output/learning/learn_group", learn["Group"])
     np.save("output/learning/learn_features", learn["Data"])
     np.save("output/learning/test_features", test["Data"])
     np.save("output/learning/learn_target", learn["Target"])
@@ -170,6 +172,7 @@ def export_data(learn, test):
 
 
 def import_data():
+    learn_group = np.load("output/learning/learn_group.npy")
     learn_features = np.load("output/learning/learn_features.npy")
     test_features = np.load("output/learning/test_features.npy")
     learn_target = np.load("output/learning/learn_target.npy")
@@ -178,6 +181,7 @@ def import_data():
     
     learn = {"Data": learn_features.tolist(),
              "Target": learn_target.tolist(),
+             "Group": learn_group.tolist(),
              "Data Labels": labels}
     test = {"Data": test_features.tolist(),
             "Target": test_target.tolist(),
@@ -202,12 +206,12 @@ def compare_predictor_chads_vasc(patients, diseases, start, end, load_from_file=
         export_data(learn, test)
 
     # print("CHADS-VASc...")
-    # cf_chads_vasc = analyze_chads_vasc(chads_vasc_data)
+    # cm_chads_vasc = analyze_chads_vasc(chads_vasc_data)
 
     print("Predicting...")
-    cf_prediction = predict(learn["Data"], learn["Target"],
+    cm_prediction = predict(learn["Data"], learn["Target"], learn["Group"],
                             test["Data"], test["Target"],
                             learn["Data Labels"], plot=True, cutoff=None)
 
-    # cf_chads_vasc.dump()
-    cf_prediction.dump()
+    # cm_chads_vasc.dump()
+    cm_prediction.dump()
