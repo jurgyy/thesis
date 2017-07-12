@@ -7,18 +7,12 @@ from learning.confusion_matrix import ConfusionMatrix
 from learning.plot import *
 
 
-def analyze_chads_vasc(data):
-    cm = ConfusionMatrix(data["Target"], data["Data"], name="CHADS-VASc")
-    return cm
-
-
 def custom_score(cutoff, beta):
     def score_cutoff(clf, x, y):
         ypred = np.array(clf.predict_proba(x)[:, 1] > cutoff).astype(int)
         cm = ConfusionMatrix(y, ypred)
         r = cm.tpr
         s = cm.tnr
-        print(cm.calculate_matrix(), r, s)
         return (beta ** 2 + 1) * (s * r) / (beta ** 2 * s + r)
 
     return score_cutoff
@@ -27,11 +21,11 @@ def custom_score(cutoff, beta):
 def predict(learn_x, learn_y, groups, test_x, test_y, labels, n_features=.2, cutoff=.1, plot=False):
     clf = ensemble.RandomForestClassifier(n_estimators=100, n_jobs=-1, class_weight='balanced')
 
-    print("# Learn Data Size: {}".format(len(learn_x)))
-    print("# Positive Target: {}".format(sum(learn_y)))
-    print("# Test Data Size:  {}".format(len(test_x)))
-    print("# Positive Target: {}".format(sum(test_y)))
-    print("# Features:        {}".format(len(learn_x[0])))
+    print("# Learn Data Size:  {}".format(len(learn_x)))
+    print("# Positive Target:  {}".format(sum(learn_y)))
+    print("# Test Data Size:   {}".format(len(test_x)))
+    print("# Positive Target:  {}".format(sum(test_y)))
+    print("# Features:         {}".format(len(labels)))
 
     print("Fitting Whole Dataset... ")
     clf.fit(learn_x, learn_y)
@@ -42,10 +36,12 @@ def predict(learn_x, learn_y, groups, test_x, test_y, labels, n_features=.2, cut
     if type(n_features) == float:
         n_features = int(len(importances) * n_features)
 
-    exclude_indeces = indexes[n_features:]
-    learn_x = np.delete(learn_x, exclude_indeces, axis=1)
-    test_x = np.delete(test_x, exclude_indeces, axis=1)
-    labels = np.delete(labels, exclude_indeces)
+    excluded_indeces = indexes[n_features:]
+    learn_x = np.delete(learn_x, excluded_indeces, axis=1)
+    test_x = np.delete(test_x, excluded_indeces, axis=1)
+    labels = np.delete(labels, excluded_indeces)
+
+    print("# Features Reduced: {}".format(len(labels)))
 
     if cutoff is None:
         print("Finding Correct Probability Cutoff...")
@@ -55,8 +51,8 @@ def predict(learn_x, learn_y, groups, test_x, test_y, labels, n_features=.2, cut
 
         gkf = GroupKFold(n_splits=10)
 
-        cutoffs = np.arange(0.025, 0.275, 0.025)
-        beta = 2
+        cutoffs = np.arange(0.05, 0.15, 0.025)
+        beta = 3
         cutoff_scores = []
         highest_mean, highest_cutoff = 0, 0
         for c in cutoffs:
