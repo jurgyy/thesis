@@ -9,7 +9,8 @@ from dateutil.relativedelta import relativedelta
 
 from anticoagulant_decision import future_stroke, chads_vasc
 from disease_groups import *
-from learning.predictor import predict, analyze_chads_vasc
+from learning.confusion_matrix import ConfusionMatrix
+from learning.predictor import predict, plot_matrices
 
 
 def get_chads_vasc_feature(patient, sim_date):
@@ -46,18 +47,6 @@ def get_feature_labels(diseases):
     return labels
 
 
-def get_random_subset(patients, test_rate=0.30, seed=None):
-    patient_nrs = list(patients.keys())
-    test_size = round(len(patient_nrs) * test_rate)
-
-    if seed:
-        random.seed(seed)
-    random.shuffle(patient_nrs)
-
-    # Workaround for np.int64 to native int conversion; perhaps there's a better way
-    return np.array(patient_nrs[0:test_size]).tolist()
-
-
 def get_patient_subset(patients, stroke_patient_rate=0.5, seed=None):
     positive_patients = []
     negative_patients = []
@@ -82,7 +71,7 @@ def get_patient_subset(patients, stroke_patient_rate=0.5, seed=None):
 def patient_month_generator(patients, start, end, step=1, test_rate=.20):
     sim_date = start
     # TODO: move split to other somewhere else
-    # test_set = get_random_subset(patients, test_rate=test_rate)
+
     test_set = get_patient_subset(patients)
     while sim_date < end:
         for patient_nr, patient in patients.items():
@@ -90,11 +79,10 @@ def patient_month_generator(patients, start, end, step=1, test_rate=.20):
             #  - Not alive
             #  - Don't have atrial fib (yet)
             #  - Last diagnosis was more than a year ago
-            #  - Are receiving antithrombotic agents (this skews the results), temporarily turned off
             if (not patient.is_alive(sim_date)) or \
                     (not patient.has_disease_group(atrial_fib, sim_date, chronic=True)) or \
                     (patient.days_since_last_diagnosis(sim_date) > 366):  # or \
-                    # patient.has_medication_group("B01", sim_date):  # Antithrombotic Agents start with B01
+                    # not (patient.care_range[0] <= sim_date <= patient.care_range[1]):
                 continue
 
             yield patient, sim_date, patient_nr not in test_set
@@ -102,43 +90,47 @@ def patient_month_generator(patients, start, end, step=1, test_rate=.20):
         sim_date += relativedelta(months=+step)
 
 
-def simulate_predictor(patients, diseases, start, end, day_since=True):
-    learn_data = {"Data": [], "Target": [], "Group": []}
-    test_data = {"Data": [], "Target": []}
+def simulate_predictor(patients, diseases, start, end, day_since=True, chads_vasc_features=False):
+    x_learn, y_learn, x_test, y_test = [], [], [], []
+    learn_groups = []
 
-    start_timer = timeit.default_timer()
+    if chads_vasc_features:
+        labels = ["C", "H", "D", "S", "V", "Gender", "Age"]
+    else:
+        labels = get_feature_labels(diseases)
+
     print("Simulating Predictor...\nStart Date: {}\nEnd Date: {}".format(start, end))
-
-    learn_data["Data Labels"] = get_feature_labels(diseases)
-    # learn_data["Data Labels"] = ["C", "H", "D", "S", "V", "Gender", "Age"]
-    test_data["Data Labels"] = learn_data["Data Labels"]
+    start_timer = timeit.default_timer()
 
     for patient, sim_date, in_test_set in patient_month_generator(patients, start, end):
-        features, target = get_feature_slice(diseases, patient, sim_date, days_since=day_since)
-        # features, target = get_chads_vasc_feature(patient, sim_date)
-        if in_test_set:
-            test_data["Data"].append(features)
-            test_data["Target"].append(target)
+        if chads_vasc_features:
+            x, y = get_chads_vasc_feature(patient, sim_date)
         else:
-            learn_data["Data"].append(features)
-            learn_data["Target"].append(target)
-            learn_data["Group"].append(patient.number)
+            x, y = get_feature_slice(diseases, patient, sim_date, days_since=day_since)
+
+        if in_test_set:
+            x_test.append(x)
+            y_test.append(y)
+        else:
+            x_learn.append(x)
+            y_learn.append(y)
+            learn_groups.append(patient.number)
 
     stop_timer = timeit.default_timer()
     print("Time elapsed: {}".format(stop_timer - start_timer))
 
-    return learn_data, test_data
+    return x_learn, y_learn, x_test, y_test, labels, learn_groups
 
 
 def simulate_chads_vasc(patients, start, end, only_test_set=False):
+    x, y = [], []
     print("Simulating CHADS-Vasc...\nStart Date: {}\nEnd Date: {}".format(start, end))
-    data = {"Data": [], "Target": []}
     for patient, sim_date, in_test_set in patient_month_generator(patients, start, end):
         if only_test_set and not in_test_set:
             continue
-        data["Data"].append(1 if patient.should_have_AC(sim_date, chads_vasc, {"max_value": 3}) else 0)
-        data["Target"].append(1 if patient.should_have_AC(sim_date, future_stroke, {"months": 12}) else 0)
-    return data
+        x.append(1 if patient.should_have_AC(sim_date, chads_vasc, {"max_value": 3}) else 0)
+        y.append(1 if patient.should_have_AC(sim_date, future_stroke, {"months": 12}) else 0)
+    return x, y
 
 
 def find_adjusted_stroke_rate(patients, start, end):
@@ -162,56 +154,63 @@ def find_adjusted_stroke_rate(patients, start, end):
     return asr
 
 
-def export_data(learn, test):
-    np.save("output/learning/learn_group", learn["Group"])
-    np.save("output/learning/learn_features", learn["Data"])
-    np.save("output/learning/test_features", test["Data"])
-    np.save("output/learning/learn_target", learn["Target"])
-    np.save("output/learning/test_target", test["Target"])
-    np.save("output/learning/labels", learn["Data Labels"])
+def export_chads_vasc_data(ypred, y):
+    np.save("output/learning/ypred_chads_vasc", ypred)
+    np.save("output/learning/y_chads_vasc", y)
 
 
-def import_data():
-    learn_group = np.load("output/learning/learn_group.npy")
-    learn_features = np.load("output/learning/learn_features.npy")
-    test_features = np.load("output/learning/test_features.npy")
-    learn_target = np.load("output/learning/learn_target.npy")
-    test_target = np.load("output/learning/test_target.npy")
-    labels = np.load("output/learning/labels.npy")
-    
-    learn = {"Data": learn_features.tolist(),
-             "Target": learn_target.tolist(),
-             "Group": learn_group.tolist(),
-             "Data Labels": labels}
-    test = {"Data": test_features.tolist(),
-            "Target": test_target.tolist(),
-            "Data Labels": labels}
+def import_chads_vasc_data():
+    ypred = np.load("output/learning/ypred_chads_vasc.npy")
+    y = np.load("output/learning/y_chads_vasc.npy")
 
-    return learn, test
+    return ypred, y
+
+
+def export_predictor_data(x_learn, y_learn, x_test, y_test, labels, learn_groups):
+    np.save("output/learning/x_learn", x_learn)
+    np.save("output/learning/y_learn", y_learn)
+    np.save("output/learning/x_test", x_test)
+    np.save("output/learning/y_test", y_test)
+    np.save("output/learning/labels", labels)
+    np.save("output/learning/learn_groups", learn_groups)
+
+
+def import_predictor_data():
+    x_learn = np.load("output/learning/x_learn.npy").tolist()
+    y_learn = np.load("output/learning/y_learn.npy").tolist()
+    x_test = np.load("output/learning/x_test.npy").tolist()
+    y_test = np.load("output/learning/y_test.npy").tolist()
+    labels = np.load("output/learning/labels.npy").tolist()
+    learn_groups = np.load("output/learning/learn_groups.npy").tolist()
+
+    return x_learn, y_learn, x_test, y_test, labels, learn_groups
 
 
 def compare_predictor_chads_vasc(patients, diseases, start, end, load_from_file=False):
     seed = random.randint(0, 1000000)
 
-    # TODO: Turn on:
-    # random.seed(seed)
-    # chads_vasc_data = simulate_chads_vasc(patients, start, end, only_test_set=True)
-
     if load_from_file:
-        print("Loading learn and test set from npy files...")
-        learn, test = import_data()
+        print("Loading learn and test data from npy files...")
+        ypred_chads_vasc, y_chads_vasc = import_chads_vasc_data()
+        x_learn, y_learn, x_test, y_test, labels, learn_groups = import_predictor_data()
     else:
         random.seed(seed)
-        learn, test = simulate_predictor(patients, diseases, start, end, day_since=True)
-        export_data(learn, test)
+        ypred_chads_vasc, y_chads_vasc = simulate_chads_vasc(patients, start, end, only_test_set=True)
+        export_chads_vasc_data(ypred_chads_vasc, y_chads_vasc)
 
-    # print("CHADS-VASc...")
-    # cm_chads_vasc = analyze_chads_vasc(chads_vasc_data)
+        random.seed(seed)
+        x_learn, y_learn, x_test, y_test, labels, learn_groups = simulate_predictor(patients, diseases,
+                                                                                    start, end, day_since=True)
+        export_predictor_data(x_learn, y_learn, x_test, y_test, labels, learn_groups)
+
+    cm_chads_vasc = ConfusionMatrix(y_chads_vasc, ypred_chads_vasc, name="CHA$_2$DS$_2$-VASc")
 
     print("Predicting...")
-    cm_prediction = predict(learn["Data"], learn["Target"], learn["Group"],
-                            test["Data"], test["Target"],
-                            learn["Data Labels"], plot=True, cutoff=None)
+    cm_prediction = predict(x_learn, y_learn, learn_groups,
+                            x_test, y_test, labels, plot=True, cutoff=0.075)
 
-    # cm_chads_vasc.dump()
+    print("Plotting Confusion Matrices...")
+    plot_matrices([cm_chads_vasc, cm_prediction])
+
+    cm_chads_vasc.dump()
     cm_prediction.dump()
