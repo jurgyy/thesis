@@ -219,5 +219,46 @@ class TestPatientShouldHaveAC(TestCase):
         self.assertFalse(self.patient.should_have_AC(d(2005, 1, 1), future_stroke, {"months": 12}))
 
 
+class TestPatientCareRange(TestCase):
+    diagnoses = [Diagnosis(Disease("TEST", "1"), d(2005, 1, 1), d(2005, 12, 31)),
+                 Diagnosis(Disease("TEST", "2"), d(2005, 6, 1), d(2006, 5, 31)),
+                 Diagnosis(Disease("TEST", "1"), d(2006, 1, 1), d(2006, 12, 31))]
+
+    medications = [Medication("A00AA00", d(2010, 1, 1), d(2010, 1, 1)),
+                   Medication("B00BB01", d(2010, 6, 1), d(2010, 6, 7)),
+                   Medication("B00BB01", d(2010, 8, 1), d(2010, 8, 7)),
+                   Medication("B00BB02", d(2010, 7, 1), d(2010, 8, 1))]
+
+    def test_none(self):
+        patient = Patient(1, 'm', d(1970, 6, 6), d(2016, 10, 5))
+        self.assertRaises(ValueError, patient.set_care_range)
+
+    def test_diagnoses(self):
+        patient = Patient(1, 'm', d(1970, 6, 6), d(2016, 10, 5))
+        for diagnosis in self.diagnoses:
+            patient.add_diagnosis(diagnosis)
+
+        patient.set_care_range(extra_months=12)
+        self.assertEqual(patient.care_range, (d(2005, 1, 1), d(2007, 12, 31)))
+
+    def test_medication(self):
+        patient = Patient(1, 'm', d(1970, 6, 6), d(2016, 10, 5))
+        for m in self.medications:
+            patient.add_medication(m)
+
+        patient.set_care_range(extra_months=6)
+        self.assertEqual(patient.care_range, (d(2010, 1, 1), d(2011, 2, 7)))
+
+    def test_combined(self):
+        patient = Patient(1, 'm', d(1970, 6, 6), d(2016, 10, 5))
+        for diagnosis in self.diagnoses:
+            patient.add_diagnosis(diagnosis)
+        for m in self.medications:
+            patient.add_medication(m)
+
+        patient.set_care_range()
+        self.assertEqual(patient.care_range, (d(2005, 1, 1), d(2010, 8, 7)))
+
+
 if __name__ == "__main__":
     main()

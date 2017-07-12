@@ -16,6 +16,7 @@ class Patient:
         self.last_diagnosis = None
         self.chads_vasc_changes = []
         self.strokes = []
+        self.care_range = (datetime.date(datetime.MAXYEAR, 12, 31), datetime.date(datetime.MINYEAR, 1, 1))
 
         self.medications = {}
 
@@ -106,7 +107,7 @@ class Patient:
 
         return score
 
-    def should_have_AC(self, timestamp, method, kwargs={}):
+    def should_have_AC(self, timestamp, method, kwargs={}):  # TODO: fix kwargs
         return method(self, timestamp, **kwargs)
 
     def is_alive(self, timestamp):
@@ -114,7 +115,7 @@ class Patient:
             return True
         return False
 
-    def find_chads_vasc_changes(self):
+    def find_chads_vasc_changes(self):  # TODO: unused
         """
         It's more efficient to pre-calculate the CHADS-VASc score based on all data,
         than to calculate it while simulating. This method does assume that all diagnoses
@@ -182,6 +183,28 @@ class Patient:
         if which and last is not None:
             return last
         return False
+
+    def set_care_range(self, extra_months=0):
+        first_date, last_date = self.care_range
+
+        for diagnosis in self.diagnoses.iter_diagnoses():
+            if diagnosis.start_date < first_date:
+                first_date = diagnosis.start_date
+            if diagnosis.end_date > last_date:
+                last_date = diagnosis.end_date
+
+        for atc_group in self.medications.values():
+            for m in atc_group:
+                if m.start_date < first_date:
+                    first_date = m.start_date
+                if m.end_date != datetime.date(datetime.MAXYEAR, 12, 31) and \
+                   m.end_date > last_date:
+                    last_date = m.end_date
+
+        if first_date == datetime.date(datetime.MAXYEAR, 1, 1) or last_date == datetime.date(datetime.MINYEAR, 1, 1):
+            raise ValueError("No patient information")
+
+        self.care_range = (first_date, last_date + relativedelta(months=extra_months))
 
 
 class ChadsVascChangeEvent:
