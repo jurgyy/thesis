@@ -56,6 +56,10 @@ class ConfusionMatrix:
                                      (self.t_n + self.f_n))
                              )
 
+    def s_beta(self, n):
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return (n**2 + 1) * np.divide((self.tnr * self.tpr), (n**2 * self.tnr + self.tpr))
+
     def calculate_matrix(self):
         t_p = f_n = f_p = t_n = 0
         for i in range(len(self.true)):
