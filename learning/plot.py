@@ -84,20 +84,47 @@ def plot_trees(clf, labels, n=3):
 
 def plot_cutoffs(cutoffs, data, ylabel=""):
     print("Plotting cutoff box plots...")
-    fig = plt.figure()
+    fig = plt.figure(figsize=(4, 3))
     ax = fig.add_subplot(111)
 
     ax.boxplot(data, whis='range')
 
     ax.set_xlabel("Cutoff")
     ax.set_ylabel(ylabel)
-    ax.set_xticklabels(cutoffs)
+    ax.set_xticklabels(cutoffs, rotation=45, ha='right')
     plt.title("10-fold cross validated scores with different cutoffs")
     plt.savefig("output/learning/cutoff_boxplot", bbox_inches='tight')
 
 
-def plot_metrics(confusion_matrices):
-    pass
+def plot_matrices(confusion_matrices):
+    fig = plt.figure(figsize=(8, 4))
+    ax = fig.add_subplot(111)
+
+    labels = ["True Positive\nRate", "False Positive\nRate", "False Negative\nRate", "True Negative\nRate",
+              "$S_3$ Score"]
+    n = len(confusion_matrices)
+    ind = np.arange(len(labels))
+    w = 0.8
+    offsets = np.arange(0, w, w/n) - 0.5 * (n - 1) * w/n
+
+    rects, names = [], []
+    for i, cm in enumerate(confusion_matrices):
+        names.append(cm.name)
+        y = [cm.tpr, cm.fpr, cm.fnr, cm.tnr, cm.s_beta(3)]
+        x = [j + offsets[i] for j in range(len(y))]
+
+        r = ax.bar(x, y, width=w/n)
+        rects.append(r)
+
+    ax.set_ylim(0, 1)
+    ax.set_xticks(ind)
+    ax.set_xticklabels(labels)
+    ax.legend(rects, names, loc=3)
+    ax.yaxis.grid(True)
+    ax.set_axisbelow(True)
+
+    plt.title("Performance comparison of different models")
+    plt.savefig("output/learning/performance", bbox_inches='tight')
 
 
 def round_nearest(num, order):
