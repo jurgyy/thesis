@@ -1,29 +1,26 @@
 import datetime
-
-import matplotlib.pyplot as plt
-
-import disease_groups
-from breakdown import breakdown, plot_AF_count
-from csv_reader.diagnose_csv import get_diagnoses
-from csv_reader.medication_csv import get_medications
-from csv_reader.patients_csv import get_patients
-from csv_reader.mergers import *
-from practioner_analysis.practitioner import analyze_practitioners
-from simulations.simulations import compare_predictor_chads_vasc
 import pickle
 
+from breakdown import *
+from csv_reader.diagnose_csv import get_diagnoses
+from csv_reader.medication_csv import get_medications
+from csv_reader.mergers import *
+from csv_reader.patients_csv import get_patients
+from practioner_analysis.practitioner import analyze_practitioners
+from simulations.simulations import compare_predictor_chads_vasc
 
-def add_diseases(patients, diagnoses):
-    for patient_nr, diagnoses in diagnoses.items():
+
+def add_diseases(patients, diagnoses_dict):
+    for patient_nr, diagnoses in diagnoses_dict.items():
         for diagnosis in diagnoses:
             patients[patient_nr].add_diagnosis(diagnosis)
 
 
-def add_medications(patients, medications):
-    for patient_nr, medication in medications.items():
-        for m in medication:
+def add_medications(patients, medications_dict):
+    for patient_nr, medications in medications_dict.items():
+        for medication in medications:
             try:
-                patients[patient_nr].add_medication(m)
+                patients[patient_nr].add_medication(medication)
             except KeyError:
                 print("Missing data, patient {}".format(patient_nr))
                 continue
@@ -57,20 +54,6 @@ def reduce_feature_space(diseases, diagnoses, min_frequency):
     return set(diseases)
 
 
-def plot_disease_frequency(diseases, diagnoses):
-    frequency = get_disease_frequency(diseases, diagnoses)
-
-    labels, y = map(list, zip(*frequency.items()))
-    labels = map(str, labels)
-
-    y, labels = zip(*sorted(zip(y, labels)))
-
-    x = range(len(labels))
-    plt.barh(x, y, log=True)
-    plt.yticks(x, labels)
-    plt.show()
-
-
 def prepare_data(dir, sep='\t'):
     print("Reading CSV files...")
     patients = get_patients("data/{}/patient_general.csv".format(dir), sep)
@@ -88,14 +71,6 @@ def prepare_data(dir, sep='\t'):
         p.find_chads_vasc_changes()
 
     return patients, diagnoses, medications
-
-
-def get_chads_vasc_diseases():
-    return disease_groups.chads_vasc_c + \
-           disease_groups.chads_vasc_d + \
-           disease_groups.chads_vasc_s + \
-           disease_groups.chads_vasc_v + \
-           disease_groups.chads_vasc_h
 
 
 def pickle_data(data, fname):
@@ -132,15 +107,16 @@ def main(load_pickle=True):
         pickle_data([patients_B, diagnoses_B, medications_B], "data_B")
         pickle_data([patients, diagnoses, medications], "data_combined")
 
+    diseases = get_all_diseases(diagnoses)
+    plot_disease_frequency(diseases, diagnoses)
     breakdown(patients, datetime.date(2017, 1, 1))
+    stroke_analysis(patients)
     plot_AF_count([patients_A, patients_B], datetime.date(2004, 1, 1), datetime.date(2017, 6, 1), ["Hospital A", "Hospital B"])
     exit()
 
-    diseases = get_all_diseases(diagnoses)
 
     # Optionally remove rare disease which reduces the feature space roughly in half
     # diseases = reduce_feature_space(diseases, diagnoses, min_frequency=10)
-    # plot_disease_frequency(diseases, diagnoses)
 
     start = datetime.date(2013, 4, 1)
     end = datetime.date(2017, 6, 1)
