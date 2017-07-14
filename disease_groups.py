@@ -128,4 +128,23 @@ stroke_diseases = chads_vasc_s
 atrial_fib = [Disease("CAR", "401"), Disease("INT", "106")]
 
 
+def groups_to_LaTeX_table():
+    file = ""
+    groups = [chads_vasc_c, chads_vasc_h, chads_vasc_d, chads_vasc_s, chads_vasc_v]
+    letters = ["C", "H", "D", "S", "V"]
+
+    file += "\\begin{longtable}{l|l|l|l}\n"
+    file += "\\caption{List of all \\chadsvasc{} diagnoses, " \
+            "selected from all present diagnoses of the AF patients, selected by a cardiologist.} \\\\\n"
+    file += "Category & Department & Code & Description (Dutch) \\\\\n"
+    for l, g in zip(letters, groups):
+        file += "\\hline\n"
+        file += l
+        for d in g:
+            file += " & {} & {} & {} \\\\\n".format(d.spec, d.diag, d.description)
+
+    file += "\\end{longtable}"
+
+    f = open('output/diagnoses_table.tex', 'w')
+    f.write(file)
 
