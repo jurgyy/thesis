@@ -96,7 +96,7 @@ def plot_cutoffs(cutoffs, data, ylabel=""):
     plt.savefig("output/learning/cutoff_boxplot", bbox_inches='tight')
 
 
-def plot_matrices(confusion_matrices):
+def plot_matrices(confusion_matrices, s_beta):
     fig = plt.figure(figsize=(8, 4))
     ax = fig.add_subplot(111)
 
@@ -110,7 +110,7 @@ def plot_matrices(confusion_matrices):
     rects, names = [], []
     for i, cm in enumerate(confusion_matrices):
         names.append(cm.name)
-        y = [cm.tpr, cm.fpr, cm.fnr, cm.tnr, cm.s_beta(3)]
+        y = [cm.tpr, cm.fpr, cm.fnr, cm.tnr, cm.s_beta(s_beta)]
         x = [j + offsets[i] for j in range(len(y))]
 
         r = ax.bar(x, y, width=w/n)
