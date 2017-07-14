@@ -1,3 +1,5 @@
+import datetime
+
 import numpy as np
 import pandas as pd
 
@@ -11,10 +13,18 @@ from simulations.simulations import patient_month_generator
 
 def breakdown(patients, timestamp):
     print("Score breakdown:")
+
+    patient_count = 0
+    female_count = 0
     data = {i: BreakdownRow() for i in range(10)}
     for patient in patients.values():
+        patient_count += 1
+        if patient.is_female():
+            female_count += 1
+
         if not patient.is_alive(timestamp):
             continue
+
         score = patient.calculate_chads_vasc(timestamp)
         data[score].update(patient.calculate_age(timestamp), patient.is_female())
 
@@ -24,6 +34,9 @@ def breakdown(patients, timestamp):
     d['Std Age'] = pd.Series([r.mean_std_age()[1] for r in data.values()])
     d['% Female'] = pd.Series([r.percentage_female() for r in data.values()])
 
+    print("Total number of patients: {}".format(patient_count))
+    print("Number of female patients: {} ({}%)".format(female_count, female_count / patient_count * 100))
+
     df = pd.DataFrame(d, index=range(10))
 
     print(df)
@@ -31,19 +44,33 @@ def breakdown(patients, timestamp):
     stroke_analysis(patients)
 
 
-def plot_AF_count(patients, start, end):
-    patient_counter = Counter()
-    for patient, month, _ in patient_month_generator(patients, start, end, 1):
-        if patient.has_disease_group(atrial_fib, month, chronic=True):
-            patient_counter[month] += 1
+def plot_AF_count(datasets, start, end, legend_labels=None):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
 
-    x = list(patient_counter.keys())
-    y = list(patient_counter.values())
+    n = len(datasets)
+    w = 320
+    offsets = np.arange(0, w, w/n) - 0.5 * (n - 1) * w/n
 
-    plt.plot(x, y)
+    rects = []
+    for i, patients in enumerate(datasets):
+        patient_counter = Counter()
+        for patient, date, _ in patient_month_generator(patients, start, end, step=12):
+            if patient.has_disease_group(atrial_fib, date, chronic=True):
+                patient_counter[date] += 1
+
+        x = list(patient_counter.keys())
+        x = [v + datetime.timedelta(days=offsets[i]) for v in x]
+        y = list(patient_counter.values())
+
+        label = legend_labels[i] if legend_labels else None
+        rects.append(ax.bar(x, y, width=w/n, label=label))
+
+    plt.legend()
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Number of patients")
     plt.title("Living AF patients over time")
-    plt.xlabel("Month")
-    plt.ylabel("Number of patients")
+    # plt.show()
     plt.savefig("output/AF_patients", bbox_inches='tight')
 
 
@@ -79,12 +106,12 @@ def stroke_analysis(patients):
         stroke_counts[len(set(patient.strokes))] += 1
 
         for s in patient.strokes:
-            if not patient.is_alive(s + relativedelta(months=+1)):
+            if not patient.is_alive(s + relativedelta(months=+12)):
                 death_after_stroke += 1
                 continue
 
     print("Number of patients with at least 1 stroke: {}".format(stroke_patients))
-    print("{} of which died within a month after diagnosis".format(death_after_stroke))
+    print("{} of which died within a year after diagnosis".format(death_after_stroke))
     print("Multiple stroke count: {}".format(stroke_counts))
     print("Plotting stroke count...")
     plot_stroke_counter(stroke_counts)
