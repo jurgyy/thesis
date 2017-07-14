@@ -8,6 +8,7 @@ from collections import Counter
 from dateutil.relativedelta import relativedelta
 
 from disease_groups import atrial_fib
+from main import get_disease_frequency
 from simulations.simulations import patient_month_generator
 
 
@@ -41,8 +42,6 @@ def breakdown(patients, timestamp):
 
     print(df)
 
-    stroke_analysis(patients)
-
 
 def plot_AF_count(datasets, start, end, legend_labels=None):
     fig = plt.figure()
@@ -71,7 +70,7 @@ def plot_AF_count(datasets, start, end, legend_labels=None):
     ax.set_ylabel("Number of patients")
     plt.title("Living AF patients over time")
     # plt.show()
-    plt.savefig("output/AF_patients", bbox_inches='tight')
+    plt.savefig("output/breakdown/AF_patients", bbox_inches='tight')
 
 
 def plot_stroke_counter(counter):
@@ -91,7 +90,7 @@ def plot_stroke_counter(counter):
     plt.ylabel("Number of patients")
 
     # plt.show()
-    plt.savefig("output/stroke_occurrence", bbox_inches='tight')
+    plt.savefig("output/breakdown/stroke_occurrence", bbox_inches='tight')
 
 
 def stroke_analysis(patients):
@@ -115,6 +114,39 @@ def stroke_analysis(patients):
     print("Multiple stroke count: {}".format(stroke_counts))
     print("Plotting stroke count...")
     plot_stroke_counter(stroke_counts)
+
+
+def plot_disease_frequency(diseases, diagnoses):
+    print("Plotting Disease Frequency...")
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    frequency = get_disease_frequency(diseases, diagnoses)
+
+    labels, y = map(list, zip(*frequency.items()))
+    labels = map(str, labels)
+
+    y, labels = zip(*sorted(zip(y, labels)))
+    print("Total number of diagnoses: {}".format(sum(y)))
+    print("Number of different diagnoses: {}".format(len(y)))
+    print("Most frequent three are: {} ({}), {} ({}) and {} ({})".format(
+        labels[-1], y[-1], labels[-2], y[-2], labels[-3], y[-3]))
+
+    x = range(len(labels))
+    ax.bar(x, y, log=True, width=4)
+    ax.set_xlim(-50, max(x) + 100)
+    ax.set_xlabel("Diagnosis")
+    ax.set_ylabel("Frequency (log scale)")
+
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(which='both')
+    ax.yaxis.grid(which='minor', alpha=0.2)
+    ax.yaxis.grid(which='major', alpha=0.5)
+
+    plt.title("Diagnosis frequency of all patients")
+    # plt.yticks(x, labels)
+    # plt.show()
+    plt.savefig("output/breakdown/diagnosis_frequency", bbox_inches='tight')
 
 
 class BreakdownRow:
