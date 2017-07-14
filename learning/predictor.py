@@ -18,27 +18,27 @@ def custom_score(cutoff, beta):
     return score_cutoff
 
 
-def predict(learn_x, learn_y, groups, test_x, test_y, labels, n_features=.2, cutoff=.1, plot=False):
+def predict(x_learn, y_learn, groups, x_test, y_test, labels, n_features=.4, cutoff=.1, plot=False):
     clf = ensemble.RandomForestClassifier(n_estimators=100, n_jobs=-1, class_weight='balanced')
 
-    print("# Learn Data Size:  {}".format(len(learn_x)))
-    print("# Positive Target:  {}".format(sum(learn_y)))
-    print("# Test Data Size:   {}".format(len(test_x)))
-    print("# Positive Target:  {}".format(sum(test_y)))
+    print("# Learn Data Size:  {}".format(len(x_learn)))
+    print("# Positive Target:  {}".format(sum(y_learn)))
+    print("# Test Data Size:   {}".format(len(x_test)))
+    print("# Positive Target:  {}".format(sum(y_test)))
     print("# Features:         {}".format(len(labels)))
 
     print("Fitting Whole Dataset... ")
-    clf.fit(learn_x, learn_y)
+    clf.fit(x_learn, y_learn)
 
     print("Reducing Feature Space... ")
-    importances, indexes = zip(*sorted(zip(clf.feature_importances_, range(len(learn_x[0]))), reverse=True))
+    importances, indexes = zip(*sorted(zip(clf.feature_importances_, range(len(x_learn[0]))), reverse=True))
 
     if type(n_features) == float:
         n_features = int(len(importances) * n_features)
 
     excluded_indeces = indexes[n_features:]
-    learn_x = np.delete(learn_x, excluded_indeces, axis=1)
-    test_x = np.delete(test_x, excluded_indeces, axis=1)
+    x_learn = np.delete(x_learn, excluded_indeces, axis=1)
+    x_test = np.delete(x_test, excluded_indeces, axis=1)
     labels = np.delete(labels, excluded_indeces)
 
     print("# Features Reduced: {}".format(len(labels)))
@@ -57,7 +57,7 @@ def predict(learn_x, learn_y, groups, test_x, test_y, labels, n_features=.2, cut
         highest_mean, highest_cutoff = 0, 0
         for c in cutoffs:
             tmp_clf = ensemble.RandomForestClassifier(n_estimators=100, n_jobs=-1, class_weight='balanced')
-            validated = cross_val_score(tmp_clf, learn_x, learn_y, cv=gkf.split(learn_x, learn_y, groups),
+            validated = cross_val_score(tmp_clf, x_learn, y_learn, cv=gkf.split(x_learn, y_learn, groups),
                                         scoring=custom_score(c, beta))
             cutoff_scores.append(validated)
             mean = np.mean(validated)
@@ -77,12 +77,12 @@ def predict(learn_x, learn_y, groups, test_x, test_y, labels, n_features=.2, cut
             plot_cutoffs(cutoffs, cutoff_scores, ylabel="$S_{%s}$ Score" % beta)
 
     print("Fitting Reduced Dataset...")
-    clf.fit(learn_x, learn_y)
+    clf.fit(x_learn, y_learn)
 
     print("Predicting...")
-    predictions = [1 if p[1] > cutoff else 0 for p in clf.predict_proba(test_x)]
+    predictions = [1 if p[1] > cutoff else 0 for p in clf.predict_proba(x_test)]
 
-    cm = ConfusionMatrix(test_y, predictions, name="Random Forest")
+    cm = ConfusionMatrix(y_test, predictions, name="Random Forest")
 
     if plot:
         try:
@@ -95,5 +95,5 @@ def predict(learn_x, learn_y, groups, test_x, test_y, labels, n_features=.2, cut
         except:
             print("Error plotting trees. Continuing...")
 
-        plot_surface(clf, learn_x, learn_y, labels=labels, cutoff=cutoff)
+        plot_surface(clf, x_learn, y_learn, labels=labels, cutoff=cutoff)
     return cm
