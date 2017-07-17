@@ -6,7 +6,7 @@ import matplotlib.lines as mlines
 
 from practioner_analysis.medication_rate import MedicationRate
 
-colors = ['C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
+colors = plt.cm.tab10
 
 
 def moving_average(a, n=3):
@@ -82,11 +82,13 @@ def plot(practitioner_data, split_date, mva, fname, legend=None, title=None):
     lines_high = []
     lines_low = []
 
+    low_marker = 'x'
+    high_marker = '.'
     for i, (high, high_dates, low, low_dates) in enumerate(practitioner_data.values()):
-        c = colors[i % len(colors)]
+        c = colors(i)
 
-        plt.scatter(high_dates, high, color=c, marker='.')
-        plt.scatter(low_dates, low, color=c, marker='x')
+        plt.scatter(low_dates, low, color=c, marker=low_marker)
+        plt.scatter(high_dates, high, color=c, marker=high_marker)
 
         if mva is not None:
             pre = int(mva / 2)
@@ -105,7 +107,12 @@ def plot(practitioner_data, split_date, mva, fname, legend=None, title=None):
         ax.axvline(split_date, linestyle=":", color="black", label='_nolegend_')
         ax.text(split_date, 0, " Start CDSS", ha="left", va="bottom")
 
-    style_legend = ax.legend([lines_high[0][0], lines_low[0][0]], ["Score $\geq$ 3", "Score < 3"], loc=3)
+    low_legend = mlines.Line2D([], [], color=colors(0), marker=low_marker, linestyle="--",
+                               markersize=7, label='Score < 3')
+    high_legend = mlines.Line2D([], [], color=colors(0), marker=high_marker,
+                                markersize=8, label='Score $\geq$ 3')
+
+    style_legend = ax.legend(handles=[low_legend, high_legend], loc=3)
 
     # For privacy's sake, no use of the practitioner names in the legends
     if legend is None:
@@ -157,8 +164,8 @@ def plot_difference(grouped_data, split_date, mva, fname, title=None):
         x_low.append(date)
         y_low.append(cdss_low[i] - no_low[index])
 
-    low_color, low_marker = colors[3], "x"
-    high_color, high_marker = colors[4], "."
+    low_color, low_marker = colors(3), "x"
+    high_color, high_marker = colors(4), "."
     if mva is not None:
         plt.plot(x_low[:-(mva - 1)], moving_average(y_low, n=mva), "--", color=low_color,
                  label="Score < 3")
@@ -191,7 +198,6 @@ def plot_difference(grouped_data, split_date, mva, fname, title=None):
     if title is not None:
         plt.title("Difference of Medication Rate")
 
-    # plt.show()
     plt.savefig("output/practitioner/{}".format(fname))
 
 
@@ -208,7 +214,7 @@ def plot_medication_breakdown(data, split_date, mva, fname, legend=None, title=N
     lines_low = []
 
     for i, (high, high_dates, low, low_dates) in enumerate(practitioner_data.values()):
-        c = colors[i % len(colors)]
+        c = colors(i)
 
         ax1.scatter(high_dates, high, color=c, marker='.')
         ax1.scatter(low_dates, low, color=c, marker='x')
@@ -250,14 +256,14 @@ def plot_medication_breakdown(data, split_date, mva, fname, legend=None, title=N
         ax.set_axisbelow(True)
         ax.set_ylim(0, 1)
 
-    label_table = np.array([("B01AA", "VKA", colors[0]),
-                            ("B01AB", "Heparin", colors[1]),
-                            ("B01AC", "Platelet", colors[2]),
-                            ("B01AD", "Enzymes", colors[3]),
-                            ("B01AE", "DTIs", colors[4]),
-                            ("B01AF", "xabans", colors[5]),
-                            ("B01AX", "B01AX", colors[6]),
-                            ("Other", "Other", colors[7])])
+    label_table = np.array([("B01AA", "VKA", colors(0)),
+                            ("B01AB", "Heparin", colors(1)),
+                            ("B01AC", "Platelet", colors(2)),
+                            ("B01AD", "Enzymes", colors(3)),
+                            ("B01AE", "DTIs", colors(4)),
+                            ("B01AF", "xabans", colors(5)),
+                            ("B01AX", "B01AX", colors(6)),
+                            ("Other", "Other", colors(7))], dtype=object)
 
     for (group, mr_dict), ax in zip(data.items(), [ax2, ax3]):
         months = list(mr_dict.keys())
