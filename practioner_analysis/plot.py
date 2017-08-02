@@ -49,7 +49,7 @@ def get_data_container(data, split_date=None):
 
         for date, medication_rate in mr_dict.items():
             all_medic, all_total = medication_rate.get_count_threshold(0)
-            high_medic, high_total = medication_rate.get_count_threshold(3)
+            high_medic, high_total = medication_rate.get_count_threshold(2)
             low_medic, low_total = all_medic - high_medic, all_total - high_total
 
             if high_total > 0:
@@ -108,9 +108,9 @@ def plot(practitioner_data, split_date, mva, fname, legend=None, title=None):
         ax.text(split_date, 0, " Start CDSS", ha="left", va="bottom")
 
     low_legend = mlines.Line2D([], [], color=colors(0), marker=low_marker, linestyle="--",
-                               markersize=7, label='Score < 3')
+                               markersize=7, label='Score < 2')
     high_legend = mlines.Line2D([], [], color=colors(0), marker=high_marker,
-                                markersize=8, label='Score $\geq$ 3')
+                                markersize=8, label='Score $\geq$ 2')
 
     style_legend = ax.legend(handles=[low_legend, high_legend], loc=3)
 
@@ -168,12 +168,12 @@ def plot_difference(grouped_data, split_date, mva, fname, title=None):
     high_color, high_marker = colors(4), "."
     if mva is not None:
         plt.plot(x_low[:-(mva - 1)], moving_average(y_low, n=mva), "--", color=low_color,
-                 label="Score < 3")
+                 label="Score < 2")
         plt.plot(x_high[:-(mva - 1)], moving_average(y_high, n=mva), color=high_color,
-                 label="Score $\geq$ 3")
+                 label="Score $\geq$ 2")
     else:
-        plt.plot(x_low, y_low, "--", color=low_color, label="Score < 3")
-        plt.plot(x_high, y_high, color=high_color, label="Score $\geq$ 3")
+        plt.plot(x_low, y_low, "--", color=low_color, label="Score < 2")
+        plt.plot(x_high, y_high, color=high_color, label="Score $\geq$ 2")
 
     plt.scatter(x_low, y_low, marker=low_marker, color=low_color)
     plt.scatter(x_high, y_high, marker=high_marker, color=high_color)
@@ -183,9 +183,9 @@ def plot_difference(grouped_data, split_date, mva, fname, title=None):
         ax.text(split_date, ax.get_ylim()[0], " Start CDSS", ha="left", va="bottom")
 
     low_legend = mlines.Line2D([], [], color=low_color, marker=low_marker, linestyle="--",
-                               markersize=7, label='Score < 3')
+                               markersize=7, label='Score < 2')
     high_legend = mlines.Line2D([], [], color=high_color, marker=high_marker,
-                                markersize=8, label='Score $\geq$ 3')
+                                markersize=8, label='Score $\geq$ 2')
 
     ax.legend(handles=[low_legend, high_legend])
 
@@ -237,7 +237,7 @@ def plot_medication_breakdown(data, split_date, mva, fname, legend=None, title=N
             ax.axvline(split_date, linestyle=":", color="black", label='_nolegend_')
         ax1.text(split_date, 0, " Start CDSS", ha="left", va="bottom")
 
-    style_legend = ax1.legend([lines_high[0][0], lines_low[0][0]], ["Score $\geq$ 3", "Score < 3"], loc=3)
+    style_legend = ax1.legend([lines_high[0][0], lines_low[0][0]], ["Score $\geq$ 2", "Score < 2"], loc=3)
 
     # For privacy's sake, no use of the practitioner names in the legends
     if legend is None:
