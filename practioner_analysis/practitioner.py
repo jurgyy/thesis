@@ -1,8 +1,4 @@
 import datetime
-import pandas as pd
-import numpy as np
-import statsmodels.api as sm
-
 from dateutil.relativedelta import relativedelta
 
 from disease import Disease
@@ -51,26 +47,6 @@ def get_diagnosis_tuples(patients, disease=None):
     return tuples
 
 
-def regression_analysis(df):
-    dummy_practitioners = pd.get_dummies(df["practitioner"], prefix='p')
-    cols = ['CDSS', 'correct', 'score']
-    print(dummy_practitioners.head())
-    dummy_practitioners.drop(dummy_practitioners.columns[0], axis=1, inplace=True)
-    print(dummy_practitioners.head())
-    data = df[cols].join(dummy_practitioners)
-
-    predict_col = 'correct'
-    train_cols = list(data.columns)
-    train_cols.remove(predict_col)
-
-    data.info()
-    logit = sm.Logit(data[predict_col], data[train_cols].astype(np.uint8))
-    result = logit.fit()
-    print(result.summary())
-    print()
-    print(result.conf_int())
-
-
 def analyze_practitioners(patients, start, end, meds_start_with, bin_months=1, **kwargs):
     print("analyzing practitioners...")
 
@@ -89,7 +65,9 @@ def analyze_practitioners(patients, start, end, meds_start_with, bin_months=1, *
     data = {k: {d: MedicationRate() for d in date_bins} for k in practitioners}
     i = 0
 
-    regression_data = {"datum": [], "practitioner": [], "CDSS": [], "score": [], "correct": []}
+    correct_before = []
+    correct_after_CDSS = []
+    correct_after_no_CDSS = []
 
     for patient, diagnosis in patient_diagnosis_tuples:
         if diagnosis.practitioner not in practitioners:
@@ -107,19 +85,26 @@ def analyze_practitioners(patients, start, end, meds_start_with, bin_months=1, *
                      or patient.has_medication_group(meds_start_with, diagnosis.start_date + relativedelta(days=+1),
                                                      which=True)
 
-        regression_data["datum"].append(diagnosis.start_date)
-        regression_data["practitioner"].append(diagnosis.practitioner)
-        regression_data["CDSS"].append(True
-                                       if diagnosis.practitioner in cdss_practitioners and diagnosis.start_date >=
-                                                                                           datetime.date(2015, 7, 1)
-                                       else False)
-        regression_data["correct"].append(1 if (score >= 2 and medication) or (score < 2 and not medication) else 0)
-        regression_data["score"].append(score)
-
         data[diagnosis.practitioner][date_bins[i]].update(score, medication)
 
-    df = pd.DataFrame(regression_data)
-    df.to_csv("output/practitioner/{}regression_data.csv".format(kwargs.get("fname_prefix")), sep=";")
+        if diagnosis.start_date < datetime.date(2014, 4, 1):
+            continue
+
+        correct = 1 if (score >= 2 and medication) or (score < 2 and not medication) else 0
+        if diagnosis.start_date < datetime.date(2015, 7, 1):
+            correct_before.append(correct)
+        else:
+            if diagnosis.practitioner in cdss_practitioners:
+                correct_after_CDSS.append(correct)
+            else:
+                correct_after_no_CDSS.append(correct)
+
+    print("Correct before:  {} / {} = {}".format(sum(correct_before), len(correct_before),
+                                                 sum(correct_before) / len(correct_before)))
+    print("Correct no CDSS: {} / {} = {}".format(sum(correct_after_no_CDSS), len(correct_after_no_CDSS),
+                                                 sum(correct_after_no_CDSS) / len(correct_after_no_CDSS)))
+    print("Correct CDSS:    {} / {} = {}".format(sum(correct_after_CDSS), len(correct_after_CDSS),
+                                                 sum(correct_after_CDSS) / len(correct_after_CDSS)))
 
     if kwargs.get("plot"):
         print("plotting...")
@@ -144,7 +129,5 @@ def analyze_practitioners(patients, start, end, meds_start_with, bin_months=1, *
         fname = prefix + "Medication Rate Difference"
         title = "Difference in medication rate over time grouped by score"
         plot_difference(grouped_data, split_date=split_date, mva=mva, fname=fname, title=title)
-
-    regression_analysis(df)
 
     return data
