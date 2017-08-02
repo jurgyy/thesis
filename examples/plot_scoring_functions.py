@@ -54,6 +54,10 @@ def main():
                  legendlabel=r'$2 \cdot \frac{\mathrm{Precision} \cdot \mathrm{Sensitivity}}{\mathrm{Precision} + \mathrm{Sensitivity}}$')
     surface_plot(1, fbeta(2), "f2_score", xlabel="Precision", ylabel="Recall", title="$F_2$ Score",
                  legendlabel=r'$5 \cdot \frac{\mathrm{Precision} \cdot \mathrm{Sensitivity}}{4 \cdot \mathrm{Precision} + \mathrm{Sensitivity}}$')
+    surface_plot(1, fbeta(5), "f5_score", xlabel="Precision", ylabel="Recall", title="$F_5$ Score",
+                 legendlabel=r'$26 \cdot \frac{\mathrm{Precision} \cdot \mathrm{Sensitivity}}{25 \cdot \mathrm{Precision} + \mathrm{Sensitivity}}$')
+    surface_plot(1, fbeta(10), "f10_score", xlabel="Precision", ylabel="Recall", title="$F_{10}$ Score",
+                     legendlabel=r'$101 \cdot \frac{\mathrm{Precision} \cdot \mathrm{Sensitivity}}{100 \cdot \mathrm{Precision} + \mathrm{Sensitivity}}$')
 
 if __name__ == "__main__":
     main()
