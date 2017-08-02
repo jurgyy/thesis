@@ -18,7 +18,7 @@ def custom_score(cutoff, beta):
     return score_cutoff
 
 
-def predict(x_learn, y_learn, groups, x_test, y_test, labels, n_features=.4, cutoff=.1, plot=False):
+def predict(x_learn, y_learn, groups, x_test, y_test, labels, n_features=.33, cutoff=None, s_beta=2, plot=False):
     clf = ensemble.RandomForestClassifier(n_estimators=100, n_jobs=-1, class_weight='balanced')
 
     print("# Learn Data Size:  {}".format(len(x_learn)))
@@ -51,14 +51,13 @@ def predict(x_learn, y_learn, groups, x_test, y_test, labels, n_features=.4, cut
 
         gkf = GroupKFold(n_splits=10)
 
-        cutoffs = np.arange(0.05, 0.15, 0.025)
-        beta = 3
+        cutoffs = np.arange(0.025, 0.275, 0.025)
         cutoff_scores = []
         highest_mean, highest_cutoff = 0, 0
         for c in cutoffs:
             tmp_clf = ensemble.RandomForestClassifier(n_estimators=100, n_jobs=-1, class_weight='balanced')
             validated = cross_val_score(tmp_clf, x_learn, y_learn, cv=gkf.split(x_learn, y_learn, groups),
-                                        scoring=custom_score(c, beta))
+                                        scoring=custom_score(c, s_beta))
             cutoff_scores.append(validated)
             mean = np.mean(validated)
 
@@ -74,15 +73,13 @@ def predict(x_learn, y_learn, groups, x_test, y_test, labels, n_features=.4, cut
         cutoff = highest_cutoff
 
         if plot:
-            plot_cutoffs(cutoffs, cutoff_scores, ylabel="$S_{%s}$ Score" % beta)
+            plot_cutoffs(cutoffs, cutoff_scores, ylabel="$S_{%s}$ Score" % s_beta)
 
     print("Fitting Reduced Dataset...")
     clf.fit(x_learn, y_learn)
 
     print("Predicting...")
     predictions = [1 if p[1] > cutoff else 0 for p in clf.predict_proba(x_test)]
-
-    cm = ConfusionMatrix(y_test, predictions, name="Random Forest")
 
     if plot:
         try:
@@ -96,4 +93,5 @@ def predict(x_learn, y_learn, groups, x_test, y_test, labels, n_features=.4, cut
             print("Error plotting trees. Continuing...")
 
         plot_surface(clf, x_learn, y_learn, labels=labels, cutoff=cutoff)
-    return cm
+
+    return predictions
