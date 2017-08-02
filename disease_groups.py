@@ -16,7 +16,6 @@ from disease import Disease
 # Plastic Sur.  PLA
 # Revalidation  REV
 
-# TODO: Check the final diagnoses list for all possible diseases
 chads_vasc_c = [
     Disease("CAR", "21", description="aanwijzingen beperkt hartfalen"),
     Disease("CAR", "22", description="acuut hartfalen"),
