@@ -1,7 +1,7 @@
 from dateutil.relativedelta import relativedelta
 
 
-def chads_vasc(patient, timestamp, max_value=3):
+def chads_vasc(patient, timestamp, max_value=2):
     return patient.calculate_chads_vasc(timestamp) >= max_value
 
 
