@@ -96,12 +96,15 @@ def plot_cutoffs(cutoffs, data, ylabel=""):
     plt.savefig("output/learning/cutoff_boxplot", bbox_inches='tight')
 
 
-def plot_matrices(confusion_matrices, s_beta):
+def plot_matrices(confusion_matrices, data_func, fname, **kwargs):
+    s_beta = kwargs.get('s_beta', 2)
+    cmap = kwargs.get('cm', plt.cm.tab10)
+    title = kwargs.get('title', "Performance comparison")
+
     fig = plt.figure(figsize=(8, 4))
     ax = fig.add_subplot(111)
 
-    labels = ["True Positive\nRate", "False Positive\nRate", "False Negative\nRate", "True Negative\nRate",
-              "$S_3$ Score"]
+    labels = data_func(confusion_matrices[0], s_beta=s_beta)[1]
     n = len(confusion_matrices)
     ind = np.arange(len(labels))
     w = 0.8
@@ -110,21 +113,24 @@ def plot_matrices(confusion_matrices, s_beta):
     rects, names = [], []
     for i, cm in enumerate(confusion_matrices):
         names.append(cm.name)
-        y = [cm.tpr, cm.fpr, cm.fnr, cm.tnr, cm.s_beta(s_beta)]
+        y = data_func(confusion_matrices[i], s_beta=s_beta)[0]
+
+        y = [v if v > 0.01 else 0.01 for v in y]
         x = [j + offsets[i] for j in range(len(y))]
 
-        r = ax.bar(x, y, width=w/n)
+        r = ax.bar(x, y, width=w/n, color=cmap(i))
         rects.append(r)
 
     ax.set_ylim(0, 1)
     ax.set_xticks(ind)
     ax.set_xticklabels(labels)
-    ax.legend(rects, names, loc=3)
+    # ax.legend(rects, names, loc=3)
+    ax.legend(rects, names, loc='center left', bbox_to_anchor=(1, 0.5))
     ax.yaxis.grid(True)
     ax.set_axisbelow(True)
 
-    plt.title("Performance comparison of different models")
-    plt.savefig("output/learning/performance", bbox_inches='tight')
+    plt.title(title)
+    plt.savefig("output/learning/{}".format(fname), bbox_inches='tight')
 
 
 def round_nearest(num, order):
