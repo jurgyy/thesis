@@ -87,6 +87,7 @@ def analyze_practitioners(patients, start, end, meds_start_with, bin_months=1, *
 
         data[diagnosis.practitioner][date_bins[i]].update(score, medication)
 
+        # Before April 2014 the medication data is incomplete so exclude it
         if diagnosis.start_date < datetime.date(2014, 4, 1):
             continue
 
@@ -99,12 +100,14 @@ def analyze_practitioners(patients, start, end, meds_start_with, bin_months=1, *
             else:
                 correct_after_no_CDSS.append(correct)
 
-    print("Correct before:  {} / {} = {}".format(sum(correct_before), len(correct_before),
-                                                 sum(correct_before) / len(correct_before)))
-    print("Correct no CDSS: {} / {} = {}".format(sum(correct_after_no_CDSS), len(correct_after_no_CDSS),
-                                                 sum(correct_after_no_CDSS) / len(correct_after_no_CDSS)))
-    print("Correct CDSS:    {} / {} = {}".format(sum(correct_after_CDSS), len(correct_after_CDSS),
-                                                 sum(correct_after_CDSS) / len(correct_after_CDSS)))
+    rate = 0 if len(correct_before) == 0 else sum(correct_before) / len(correct_before)
+    print("Correct before:  {} / {} = {}".format(sum(correct_before), len(correct_before), rate))
+
+    rate = 0 if len(correct_after_no_CDSS) == 0 else sum(correct_after_no_CDSS) / len(correct_after_no_CDSS)
+    print("Correct no CDSS: {} / {} = {}".format(sum(correct_after_no_CDSS), len(correct_after_no_CDSS), rate))
+
+    rate = 0 if len(correct_after_CDSS) == 0 else sum(correct_after_CDSS) / len(correct_after_CDSS)
+    print("Correct CDSS:    {} / {} = {}".format(sum(correct_after_CDSS), len(correct_after_CDSS), rate))
 
     if kwargs.get("plot"):
         print("plotting...")
