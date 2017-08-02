@@ -12,9 +12,9 @@ from disease import Disease
 
 
 class TestCsvReaders(TestCase):
-    patients = get_patients("test_data/test_patients.csv")
-    diagnoses = get_diagnoses("test_data/test_diagnoses.csv")
-    medications = get_medications("test_data/test_meds.csv")
+    patients = get_patients("test_data/test_patients.csv", sep='\t')
+    diagnoses = get_diagnoses("test_data/test_diagnoses.csv", sep='\t')
+    medications = get_medications("test_data/test_meds.csv", sep='\t')
 
     def test_get_patients(self):
         self.assertEqual(self.patients[5], Patient(5, "m", d(1931, 1, 1), d(datetime.MAXYEAR, 12, 31)))

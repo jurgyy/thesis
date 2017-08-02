@@ -78,9 +78,9 @@ class TestMedicationRate(TestCase):
 
 
 class TestPractitionerAnalysis(TestCase):
-    patients = get_patients("test_data/test_patients.csv")
-    diagnoses = get_diagnoses("test_data/test_diagnoses.csv", merge=False)
-    medications = get_medications("test_data/test_meds.csv")
+    patients = get_patients("test_data/test_patients.csv", sep='\t')
+    diagnoses = get_diagnoses("test_data/test_diagnoses.csv", sep='\t', merge=False)
+    medications = get_medications("test_data/test_meds.csv", sep='\t')
 
     add_diseases(patients, diagnoses)
     add_medications(patients, medications)
