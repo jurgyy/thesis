@@ -54,7 +54,7 @@ def plot_AF_count(datasets, start, end, legend_labels=None):
     rects = []
     for i, patients in enumerate(datasets):
         patient_counter = Counter()
-        for patient, date, _ in patient_month_generator(patients, start, end, step=12):
+        for patient, date, _ in patient_month_generator(patients, start, end, step=12, include_meds=True):
             if patient.has_disease_group(atrial_fib, date, chronic=True):
                 patient_counter[date] += 1
 
@@ -74,7 +74,7 @@ def plot_AF_count(datasets, start, end, legend_labels=None):
 
 
 def plot_stroke_counter(counter):
-    fig = plt.figure(figsize=(10, 5))
+    fig = plt.figure(figsize=(8, 4))
     ax = fig.add_subplot(111)
 
     labels, values = zip(*sorted(counter.items()))
@@ -84,6 +84,8 @@ def plot_stroke_counter(counter):
     ax.bar(indexes, values, width)
     ax.set_xticks(indexes)
     ax.set_xticklabels(labels)
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(which='both')
 
     plt.title("Occurrences of multiple strokes")
     plt.xlabel("Number of strokes occurred")
@@ -93,27 +95,49 @@ def plot_stroke_counter(counter):
     plt.savefig("output/breakdown/stroke_occurrence", bbox_inches='tight')
 
 
+def plot_stroke_count_score(count):
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111)
+
+    x = list(range(10))
+    y = [count[v] for v in x]
+
+    ax.bar(x, y)
+    ax.set_xticks(x)
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(which='both')
+
+    plt.title(r"Occurrence of stroke per CHA$_2$DS$_2$-VASc score")
+    plt.xlabel("Score")
+    plt.ylabel("Number of patients")
+
+    plt.savefig("output/breakdown/stroke_score", bbox_inches='tight')
+
+
 def stroke_analysis(patients):
     stroke_patients = 0
     death_after_stroke = 0
-    stroke_counts = Counter()
+    mult_stroke_counts = Counter()
+    stroke_count_score = Counter()
     for patient in patients.values():
         if not patient.strokes:
             continue
 
         stroke_patients += 1
-        stroke_counts[len(set(patient.strokes))] += 1
+        mult_stroke_counts[len(set(patient.strokes))] += 1
 
         for s in patient.strokes:
+            stroke_count_score[patient.calculate_chads_vasc(s - relativedelta(days=+1))] += 1
             if not patient.is_alive(s + relativedelta(months=+12)):
                 death_after_stroke += 1
                 continue
 
     print("Number of patients with at least 1 stroke: {}".format(stroke_patients))
     print("{} of which died within a year after diagnosis".format(death_after_stroke))
-    print("Multiple stroke count: {}".format(stroke_counts))
+    print("Multiple stroke count: {}".format(mult_stroke_counts))
     print("Plotting stroke count...")
-    plot_stroke_counter(stroke_counts)
+    plot_stroke_counter(mult_stroke_counts)
+    plot_stroke_count_score(stroke_count_score)
 
 
 def plot_disease_frequency(diseases, diagnoses):
