@@ -36,6 +36,10 @@ class Patient:
         if self.last_diagnosis is None or diagnosis.start_date > self.last_diagnosis.start_date:
             self.last_diagnosis = diagnosis
 
+        if self.death_date is not None and self.death_date is not datetime.date(datetime.MAXYEAR, 12, 31):
+            if diagnosis.start_date > self.death_date:
+                self.death_date = diagnosis.start_date
+
     def get_current_diseases(self, timestamp):  # Unused
         current_diseases = set()
         for diagnosis in self.diagnoses.iter_diagnoses():
