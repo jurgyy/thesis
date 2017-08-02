@@ -2,12 +2,12 @@ import datetime
 from datetime import date as d
 from unittest import TestCase, main
 
-from main import add_diseases, add_medications, get_all_diseases, get_disease_frequency, reduce_feature_space
+from main import add_diseases, add_medications, get_all_diseases, reduce_feature_space
+from breakdown import get_disease_frequency
 from diagnosis import Diagnosis
 from medication import Medication
 from patient import Patient
 from disease import Disease
-from simulations import get_random_subset
 
 
 class TestMainFunctions(TestCase):
@@ -60,12 +60,6 @@ class TestMainFunctions(TestCase):
 
     def test_reduce_feature_space(self):
         self.assertEqual(reduce_feature_space(self.diseases, self.diagnoses, 3), {Disease("TEST", "1")})
-
-    def test_get_random_subset(self):
-        subset = get_random_subset(self.patients, 0.5)
-        self.assertEqual(len(subset), 2)
-        for s in subset:
-            self.assertTrue(s in self.patients)
 
     def test_add_medication(self):
         add_medications(self.patients, self.medications)

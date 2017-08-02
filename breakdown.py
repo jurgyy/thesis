@@ -8,7 +8,6 @@ from collections import Counter
 from dateutil.relativedelta import relativedelta
 
 from disease_groups import atrial_fib
-from main import get_disease_frequency
 from simulations.simulations import patient_month_generator
 
 
@@ -138,6 +137,18 @@ def stroke_analysis(patients):
     print("Plotting stroke count...")
     plot_stroke_counter(mult_stroke_counts)
     plot_stroke_count_score(stroke_count_score)
+
+
+def get_disease_frequency(diseases, diagnoses):
+    frequency = {d: 0 for d in diseases}
+
+    for patient_diagnoses in diagnoses.values():
+        for diagnosis in patient_diagnoses:
+            if diagnosis.disease not in frequency:
+                continue
+            frequency[diagnosis.disease] += 1
+
+    return frequency
 
 
 def plot_disease_frequency(diseases, diagnoses):
