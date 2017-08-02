@@ -1,9 +1,9 @@
-import datetime
-from collections import Counter
-
 import numpy as np
 import timeit
+import datetime
 import random
+from collections import Counter
+from matplotlib.pyplot import cm
 
 from dateutil.relativedelta import relativedelta
 
@@ -68,7 +68,7 @@ def get_patient_subset(patients, stroke_patient_rate=0.5, seed=None):
     return learn_set
 
 
-def patient_month_generator(patients, start, end, step=1, test_rate=.20):
+def patient_month_generator(patients, start, end, step=1, include_meds=False):
     sim_date = start
     # TODO: move split to other somewhere else
 
@@ -79,20 +79,19 @@ def patient_month_generator(patients, start, end, step=1, test_rate=.20):
             #  - Not alive
             #  - Don't have atrial fib (yet)
             #  - Last diagnosis was more than a year ago
-            if (not patient.is_alive(sim_date)) or \
-                    (not patient.has_disease_group(atrial_fib, sim_date, chronic=True)) or \
-                    (patient.days_since_last_diagnosis(sim_date) > 366):  # or \
-                    # not (patient.care_range[0] <= sim_date <= patient.care_range[1]):
-                continue
-
-            yield patient, sim_date, patient_nr not in test_set
+            #  - Receive Antithrombotics
+            if patient.is_alive(sim_date) \
+               and patient.has_disease_group(atrial_fib, sim_date, chronic=True) \
+               and patient.days_since_last_diagnosis(sim_date) <= 365 \
+               and (not patient.has_medication_group("B01", sim_date) or include_meds):  # Antithrombotic Agents start with B01
+                yield patient, sim_date, patient_nr not in test_set
 
         sim_date += relativedelta(months=+step)
 
 
 def simulate_predictor(patients, diseases, start, end, day_since=True, chads_vasc_features=False):
     x_learn, y_learn, x_test, y_test = [], [], [], []
-    learn_groups = []
+    learn_groups, scores = [], []
 
     if chads_vasc_features:
         labels = ["C", "H", "D", "S", "V", "Gender", "Age"]
@@ -111,6 +110,7 @@ def simulate_predictor(patients, diseases, start, end, day_since=True, chads_vas
         if in_test_set:
             x_test.append(x)
             y_test.append(y)
+            scores.append(patient.calculate_chads_vasc(sim_date))
         else:
             x_learn.append(x)
             y_learn.append(y)
@@ -119,60 +119,84 @@ def simulate_predictor(patients, diseases, start, end, day_since=True, chads_vas
     stop_timer = timeit.default_timer()
     print("Time elapsed: {}".format(stop_timer - start_timer))
 
-    return x_learn, y_learn, x_test, y_test, labels, learn_groups
+    return x_learn, y_learn, x_test, y_test, labels, learn_groups, scores
 
 
 def simulate_chads_vasc(patients, start, end, only_test_set=False):
-    x, y = [], []
+    x, y, scores = [], [], []
     print("Simulating CHADS-Vasc...\nStart Date: {}\nEnd Date: {}".format(start, end))
     for patient, sim_date, in_test_set in patient_month_generator(patients, start, end):
         if only_test_set and not in_test_set:
             continue
-        x.append(1 if patient.should_have_AC(sim_date, chads_vasc, {"max_value": 3}) else 0)
+        x.append(1 if patient.should_have_AC(sim_date, chads_vasc, {"max_value": 2}) else 0)
         y.append(1 if patient.should_have_AC(sim_date, future_stroke, {"months": 12}) else 0)
-    return x, y
+        scores.append(patient.calculate_chads_vasc(sim_date))
+    return x, y, scores
 
 
-def find_adjusted_stroke_rate(patients, start, end):
-    score_counter = Counter()
-    stroke_counter = Counter()
-    for patient, sim_date, _ in patient_month_generator(patients, start, end, step=12):
-        score = patient.calculate_chads_vasc(sim_date)
-        score_counter[score] += 1
+def get_group_dict(score_groups, y_true, y_pred, scores):
+    print(score_groups)
+    score_group_map = {}
+    for i in range(10):
+        index = -1
+        for j, g in enumerate(score_groups):
+            if i in g:
+                index = j
+                break
 
-        if patient.should_have_AC(sim_date, future_stroke, {"months": 12}):
-            stroke_counter[score] += 1
+        score_group_map[i] = index if index >= 0 else len(score_groups)
 
-    asr = {}
-    with np.errstate(divide='ignore', invalid='ignore'):
-        baseline_rate = np.divide(stroke_counter[0], score_counter[0])
-        print("baseline rate: {}".format(baseline_rate))
-        for i in range(10):
-            print("{}) {}    {}".format(i, stroke_counter[i], score_counter[i]))
-            asr[i] = np.divide(stroke_counter[i], score_counter[i]) - baseline_rate
+    grouped = {k: ([], []) for k in range(len(score_groups) + 1)}
+    print(grouped)
+    print(score_group_map)
+    for true, pred, score in zip(y_true, y_pred, scores):
+        index = score_group_map[score]
+        grouped[index][0].append(true)
+        grouped[index][1].append(pred)
 
-    return asr
+    return grouped
 
 
-def export_chads_vasc_data(ypred, y):
+def get_grouped_matrices(models, score_groups, names):
+    max_score = score_groups[-1][-1]
+    score_labels = ["{} - {}".format(l[0], l[-1]) if len(l) > 1 else str(l[0]) for l in score_groups] + \
+                   ["$\geq${}".format(max_score + 1)]
+
+    grouped_data = []
+    for true, pred, scores in models:
+        grouped_data.append(get_group_dict(score_groups, true, pred, scores))
+
+    cms = []
+    for i, l in enumerate(score_labels):
+        for j, g in enumerate(grouped_data):
+            print("Group {}\t#Positive: {}\tTotal: {}".format(l, sum(g[i][0]), len(g[i][0])))
+            cms.append(ConfusionMatrix(g[i][0], g[i][1], name="{} {}".format(l, names[j])))
+
+    return cms
+
+
+def export_chads_vasc_data(ypred, y, scores):
     np.save("output/learning/ypred_chads_vasc", ypred)
     np.save("output/learning/y_chads_vasc", y)
+    np.save("output/learning/chads_vasc_scores", scores)
 
 
 def import_chads_vasc_data():
     ypred = np.load("output/learning/ypred_chads_vasc.npy")
     y = np.load("output/learning/y_chads_vasc.npy")
+    scores = np.load("output/learning/chads_vasc_scores.npy")
 
-    return ypred, y
+    return ypred, y, scores
 
 
-def export_predictor_data(x_learn, y_learn, x_test, y_test, labels, learn_groups):
+def export_predictor_data(x_learn, y_learn, x_test, y_test, labels, learn_groups, test_scores):
     np.save("output/learning/x_learn", x_learn)
     np.save("output/learning/y_learn", y_learn)
     np.save("output/learning/x_test", x_test)
     np.save("output/learning/y_test", y_test)
     np.save("output/learning/labels", labels)
     np.save("output/learning/learn_groups", learn_groups)
+    np.save("output/learning/test_scores", test_scores)
 
 
 def import_predictor_data():
@@ -182,35 +206,73 @@ def import_predictor_data():
     y_test = np.load("output/learning/y_test.npy").tolist()
     labels = np.load("output/learning/labels.npy").tolist()
     learn_groups = np.load("output/learning/learn_groups.npy").tolist()
+    test_scores = np.load("output/learning/test_scores.npy").tolist()
 
-    return x_learn, y_learn, x_test, y_test, labels, learn_groups
+    return x_learn, y_learn, x_test, y_test, labels, learn_groups, test_scores
 
 
 def compare_predictor_chads_vasc(patients, diseases, start, end, load_from_file=False):
-    seed = random.randint(0, 1000000)
-
     if load_from_file:
         print("Loading learn and test data from npy files...")
-        ypred_chads_vasc, y_chads_vasc = import_chads_vasc_data()
-        x_learn, y_learn, x_test, y_test, labels, learn_groups = import_predictor_data()
+        ypred_chads_vasc, y_chads_vasc, chads_vasc_scores = import_chads_vasc_data()
+        x_learn, y_learn, x_test, y_test, labels, learn_groups, test_scores = import_predictor_data()
     else:
+        seed = random.randint(0, 1000000)
+        print("Used seed: {}".format(seed))
         random.seed(seed)
-        ypred_chads_vasc, y_chads_vasc = simulate_chads_vasc(patients, start, end, only_test_set=True)
-        export_chads_vasc_data(ypred_chads_vasc, y_chads_vasc)
+        ypred_chads_vasc, y_chads_vasc, chads_vasc_scores = simulate_chads_vasc(patients, start, end, only_test_set=True)
+        export_chads_vasc_data(ypred_chads_vasc, y_chads_vasc, chads_vasc_scores)
 
         random.seed(seed)
-        x_learn, y_learn, x_test, y_test, labels, learn_groups = simulate_predictor(patients, diseases,
-                                                                                    start, end, day_since=True)
-        export_predictor_data(x_learn, y_learn, x_test, y_test, labels, learn_groups)
+        x_learn, y_learn, x_test, y_test, labels, learn_groups, test_scores = simulate_predictor(
+            patients, diseases, start, end, day_since=True
+        )
+        export_predictor_data(x_learn, y_learn, x_test, y_test, labels, learn_groups, test_scores)
 
     cm_chads_vasc = ConfusionMatrix(y_chads_vasc, ypred_chads_vasc, name="CHA$_2$DS$_2$-VASc")
 
-    print("Predicting...")
-    cm_prediction = predict(x_learn, y_learn, learn_groups,
-                            x_test, y_test, labels, plot=True, cutoff=0.075)
+    print("Predicting with unknown cutoff...")
+    predictions_unknown = predict(x_learn, y_learn, learn_groups,
+                                  x_test, y_test, labels, plot=True, s_beta=2, cutoff=0.05)
+    cm_prediction_unknown = ConfusionMatrix(y_test, predictions_unknown, name=r'RF c=0.05')
 
+    print("Predicting with fixed cutoff: 0.015...")
+    predictions_fixed = predict(x_learn, y_learn, learn_groups,
+                                x_test, y_test, labels, plot=False, cutoff=0.015)
+    cm_prediction_fixed = ConfusionMatrix(y_test, predictions_fixed, name="RF c=0.015")
+
+    # Hard to separate in functions
     print("Plotting Confusion Matrices...")
-    plot_matrices([cm_chads_vasc, cm_prediction])
+
+    def cm_plot_data(cm, **kwargs):
+        s_beta = kwargs.get("s_beta", 2)
+        data = [cm.tpr, cm.fpr, cm.fnr, cm.tnr, cm.s_beta(s_beta)]
+        labels = ["True Positive\nRate", "False Positive\nRate", "False Negative\nRate", "True Negative\nRate",
+                  r'$S_{}$ Score'.format(s_beta)]
+        return data, labels
+
+    plot_matrices([cm_prediction_unknown, cm_prediction_fixed, cm_chads_vasc], cm_plot_data, "performance", s_beta=2,
+                  title="Performance comparison of Random Forests and CHA$_2$DS$_2$-VASc")
+
+    def cm_plot_data(cm, **kwargs):
+        data = [cm.tpr, cm.tnr]
+        labels = ["True Positive\nRate", "True Negative\nRate"]
+        return data, labels
+
+    def cm_three_pair(n):
+        return cm.tab20c(n + n // 3)
+
+    score_groups = [[0, 1], [2, 3]]
+    data = [
+        [y_test, predictions_unknown, test_scores],
+        [y_test, predictions_fixed, test_scores],
+        [y_chads_vasc, ypred_chads_vasc, chads_vasc_scores]
+    ]
+    names = ["RF c=0.05", "RF c=0.015", "CHA$_2$DS$_2$-VASc"]
+    cms = get_grouped_matrices(data, score_groups, names=names)
+    plot_matrices(cms, cm_plot_data, "performance_scored", cm=cm_three_pair,
+                  title="Performance comparison grouped by CHA$_2$DS$_2$-VASC score")
 
     cm_chads_vasc.dump()
-    cm_prediction.dump()
+    cm_prediction_unknown.dump()
+    cm_prediction_fixed.dump()
