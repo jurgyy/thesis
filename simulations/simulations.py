@@ -20,7 +20,7 @@ def get_chads_vasc_feature(patient, sim_date):
     x.append(1 if patient.is_female() else 0)
     x.append(patient.calculate_age(sim_date))
 
-    y = patient.should_have_AC(sim_date, future_stroke, {"months": 12})
+    y = patient.should_have_AC(sim_date, future_stroke, months=12)
     return x, y
 
 
@@ -34,7 +34,7 @@ def get_feature_slice(diseases, patient, sim_date, days_since=True):
     x.append(1 if patient.is_female() else 0)
     x.append(patient.calculate_age(sim_date))
 
-    y = patient.should_have_AC(sim_date, future_stroke, {"months": 12})
+    y = patient.should_have_AC(sim_date, future_stroke, months=12)
 
     return x, y
 
@@ -128,8 +128,8 @@ def simulate_chads_vasc(patients, start, end, only_test_set=False):
     for patient, sim_date, in_test_set in patient_month_generator(patients, start, end):
         if only_test_set and not in_test_set:
             continue
-        x.append(1 if patient.should_have_AC(sim_date, chads_vasc, {"max_value": 2}) else 0)
-        y.append(1 if patient.should_have_AC(sim_date, future_stroke, {"months": 12}) else 0)
+        x.append(1 if patient.should_have_AC(sim_date, chads_vasc, max_value=2) else 0)
+        y.append(1 if patient.should_have_AC(sim_date, future_stroke, months=12) else 0)
         scores.append(patient.calculate_chads_vasc(sim_date))
     return x, y, scores
 
