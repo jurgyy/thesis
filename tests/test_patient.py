@@ -6,7 +6,6 @@ from diagnosis import Diagnosis
 from disease_groups import *
 
 from patient import Patient
-from patient import ChadsVascChangeEvent as CVCE
 from disease import Disease
 from medication import Medication
 
@@ -103,38 +102,8 @@ class TestChadsVasc(TestCase):
         patient_male.add_diagnosis(diagnosis)
         patient_female.add_diagnosis(diagnosis)
 
-    patient_male.find_chads_vasc_changes()
-    patient_female.find_chads_vasc_changes()
-
     patient_male.find_strokes()
     patient_female.find_strokes()
-
-    def test_find_chads_vasc_changes(self):
-        male_changes = self.patient_male.chads_vasc_changes
-        female_changes = self.patient_female.chads_vasc_changes
-
-        expected_male_changes = sorted([CVCE(self.patient_male.birth_date, 0),
-                                        CVCE(d(1962, 1, 1), 1),
-                                        CVCE(d(1963, 1, 1), 3),
-                                        CVCE(d(1965, 1, 1), 4),
-                                        CVCE(d(1967, 1, 1), 4),
-                                        CVCE(d(1968, 1, 1), 5),
-                                        CVCE(d(1969, 1, 1), 5),
-                                        CVCE(d(1995, 1, 1), 6),
-                                        CVCE(d(2005, 1, 1), 7)])
-
-        expected_female_changes = sorted([CVCE(self.patient_female.birth_date, 1),
-                                          CVCE(d(1962, 1, 1), 2),
-                                          CVCE(d(1963, 1, 1), 4),
-                                          CVCE(d(1965, 1, 1), 5),
-                                          CVCE(d(1967, 1, 1), 5),
-                                          CVCE(d(1968, 1, 1), 6),
-                                          CVCE(d(1969, 1, 1), 6),
-                                          CVCE(d(1995, 1, 1), 7),
-                                          CVCE(d(2005, 1, 1), 8)])
-
-        self.assertEqual(male_changes, expected_male_changes)
-        self.assertEqual(female_changes, expected_female_changes)
 
     def test_find_strokes(self):
         expected_strokes = [d(1963, 1, 1), d(1969, 1, 1)]
@@ -187,36 +156,27 @@ class TestPatientShouldHaveAC(TestCase):
 
     for diagnosis in diagnoses:
         patient.add_diagnosis(diagnosis)
-    patient.find_chads_vasc_changes()
     patient.find_strokes()
 
     def test_method_chads_vasc(self):
-        self.assertFalse(self.patient.should_have_AC(d(1980, 1, 1), chads_vasc, {"max_value": 3}))
-        self.assertFalse(self.patient.should_have_AC(d(1985, 1, 1), chads_vasc, {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(1990, 1, 1), chads_vasc, {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(1995, 1, 1), chads_vasc, {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(2000, 1, 1), chads_vasc, {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(2005, 1, 1), chads_vasc, {"max_value": 3}))
-
-    def test_method_event_based(self):
-        self.assertFalse(self.patient.should_have_AC(d(1980, 1, 1), event_based, {"max_value": 3}))
-        self.assertFalse(self.patient.should_have_AC(d(1985, 1, 1), event_based, {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(1990, 1, 1), event_based, {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(1995, 1, 1), event_based, {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(2000, 1, 1), event_based, {"max_value": 3}))
-        self.assertTrue(self.patient.should_have_AC(d(2005, 1, 1), event_based, {"max_value": 3}))
+        self.assertFalse(self.patient.should_have_AC(d(1980, 1, 1), chads_vasc, max_value=3))
+        self.assertFalse(self.patient.should_have_AC(d(1985, 1, 1), chads_vasc, max_value=3))
+        self.assertTrue(self.patient.should_have_AC(d(1990, 1, 1), chads_vasc, max_value=3))
+        self.assertTrue(self.patient.should_have_AC(d(1995, 1, 1), chads_vasc, max_value=3))
+        self.assertTrue(self.patient.should_have_AC(d(2000, 1, 1), chads_vasc, max_value=3))
+        self.assertTrue(self.patient.should_have_AC(d(2005, 1, 1), chads_vasc, max_value=3))
 
     def test_method_future_stroke(self):
-        self.assertFalse(self.patient.should_have_AC(d(1980, 1, 1), future_stroke, {"months": 12}))
-        self.assertFalse(self.patient.should_have_AC(d(1985, 1, 1), future_stroke, {"months": 12}))
-        self.assertTrue(self.patient.should_have_AC(d(1989, 12, 31), future_stroke, {"months": 12}))
-        self.assertFalse(self.patient.should_have_AC(d(1990, 1, 1), future_stroke, {"months": 12}))
-        self.assertFalse(self.patient.should_have_AC(d(1995, 1, 1), future_stroke, {"months": 12}))
-        self.assertFalse(self.patient.should_have_AC(d(2000, 1, 1), future_stroke, {"months": 12}))
-        self.assertFalse(self.patient.should_have_AC(d(2003, 12, 31), future_stroke, {"months": 12}))
-        self.assertTrue(self.patient.should_have_AC(d(2004, 1, 1), future_stroke, {"months": 12}))
-        self.assertTrue(self.patient.should_have_AC(d(2004, 12, 31), future_stroke, {"months": 12}))
-        self.assertFalse(self.patient.should_have_AC(d(2005, 1, 1), future_stroke, {"months": 12}))
+        self.assertFalse(self.patient.should_have_AC(d(1980, 1, 1), future_stroke, months=12))
+        self.assertFalse(self.patient.should_have_AC(d(1985, 1, 1), future_stroke, months=12))
+        self.assertTrue(self.patient.should_have_AC(d(1989, 12, 31), future_stroke, months=12))
+        self.assertFalse(self.patient.should_have_AC(d(1990, 1, 1), future_stroke, months=12))
+        self.assertFalse(self.patient.should_have_AC(d(1995, 1, 1), future_stroke, months=12))
+        self.assertFalse(self.patient.should_have_AC(d(2000, 1, 1), future_stroke, months=12))
+        self.assertFalse(self.patient.should_have_AC(d(2003, 12, 31), future_stroke, months=12))
+        self.assertTrue(self.patient.should_have_AC(d(2004, 1, 1), future_stroke, months=12))
+        self.assertTrue(self.patient.should_have_AC(d(2004, 12, 31), future_stroke, months=12))
+        self.assertFalse(self.patient.should_have_AC(d(2005, 1, 1), future_stroke, months=12))
 
 
 class TestPatientCareRange(TestCase):

@@ -14,7 +14,6 @@ class Patient:
 
         self.diagnoses = DiagnosesDict({})
         self.last_diagnosis = None
-        self.chads_vasc_changes = []
         self.strokes = []
         self.care_range = (datetime.date(datetime.MAXYEAR, 12, 31), datetime.date(datetime.MINYEAR, 1, 1))
 
@@ -111,41 +110,13 @@ class Patient:
 
         return score
 
-    def should_have_AC(self, timestamp, method, kwargs={}):  # TODO: fix kwargs
+    def should_have_AC(self, timestamp, method, **kwargs):
         return method(self, timestamp, **kwargs)
 
     def is_alive(self, timestamp):
         if self.birth_date <= timestamp < self.death_date:
             return True
         return False
-
-    def find_chads_vasc_changes(self):  # TODO: unused
-        """
-        It's more efficient to pre-calculate the CHADS-VASc score based on all data,
-        than to calculate it while simulating. This method does assume that all diagnoses
-        are in effect indefinitely (chronic).
-        """
-
-        if self.is_female():
-            changes = [ChadsVascChangeEvent(self.birth_date, 1)]
-        else:
-            changes = [ChadsVascChangeEvent(self.birth_date, 0)]
-
-        for d, ds in self.diagnoses.items():
-            if d not in set(chads_vasc_c + chads_vasc_h + chads_vasc_d + chads_vasc_s + chads_vasc_v):
-                continue
-            for diagnosis in ds:
-                date = diagnosis.start_date
-
-                changes.append(ChadsVascChangeEvent(date, self.calculate_chads_vasc(date)))
-
-        date = self.birth_date + relativedelta(years=65)
-        changes.append(ChadsVascChangeEvent(date, self.calculate_chads_vasc(date)))
-
-        date = self.birth_date + relativedelta(years=75)
-        changes.append(ChadsVascChangeEvent(date, self.calculate_chads_vasc(date)))
-
-        self.chads_vasc_changes = sorted(changes)
 
     def find_strokes(self):
 
@@ -209,21 +180,6 @@ class Patient:
             raise ValueError("No patient information")
 
         self.care_range = (first_date, last_date + relativedelta(months=extra_months))
-
-
-class ChadsVascChangeEvent:
-    def __init__(self, date, score):
-        self.date = date
-        self.score = score
-
-    def __lt__(self, other):
-        return self.date < other.date
-
-    def __repr__(self):
-        return "{} {}".format(self.date, self.score)
-
-    def __eq__(self, other):
-        return self.date == other.date and self.score == other.score
 
 
 class DiagnosesDict(dict):
