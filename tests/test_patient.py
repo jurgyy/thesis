@@ -1,7 +1,7 @@
 from datetime import date as d
 from unittest import TestCase, main
 
-from anticoagulant_decision import chads_vasc, event_based, future_stroke
+from anticoagulant_decision import chads_vasc, future_stroke
 from diagnosis import Diagnosis
 from disease_groups import *
 
