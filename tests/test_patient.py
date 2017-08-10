@@ -44,8 +44,13 @@ class TestPatientDiseases(TestCase):
 
     def test_add_diagnosis(self):
         self.patient.add_diagnosis(self.diagnoses[0])
-        self.patient.add_diagnosis(self.diagnoses[1])
+        self.assertEqual(self.patient.diagnoses.last_diagnosis, self.diagnoses[0])
+
         self.patient.add_diagnosis(self.diagnoses[2])
+        self.assertEqual(self.patient.diagnoses.last_diagnosis, self.diagnoses[2])
+
+        self.patient.add_diagnosis(self.diagnoses[1])
+        self.assertEqual(self.patient.diagnoses.last_diagnosis, self.diagnoses[2])
 
         self.assertEqual(len(self.patient.diagnoses[Disease("TEST", "1")]), 2)
         self.assertEqual(len(self.patient.diagnoses[Disease("TEST", "2")]), 1)

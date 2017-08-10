@@ -2,6 +2,7 @@ import datetime
 
 from dateutil.relativedelta import relativedelta
 
+from diagnosis import Diagnosis
 from disease_groups import *
 
 
@@ -13,9 +14,8 @@ class Patient:
         self.death_date = death_date
 
         self.diagnoses = DiagnosesDict({})
-        self.last_diagnosis = None
         self.strokes = []
-        self.care_range = (datetime.date(datetime.MAXYEAR, 12, 31), datetime.date(datetime.MINYEAR, 1, 1))
+        self.care_range = (datetime.date(datetime.MAXYEAR, 12, 31), datetime.date(datetime.MINYEAR, 1, 1))  # TODO Unused
 
         self.medications = {}
 
@@ -28,12 +28,7 @@ class Patient:
                 self.birth_date == other.birth_date and self.death_date == other.death_date)
 
     def add_diagnosis(self, diagnosis):
-        if diagnosis.disease not in self.diagnoses:
-            self.diagnoses[diagnosis.disease] = []
-
-        self.diagnoses[diagnosis.disease].append(diagnosis)
-        if self.last_diagnosis is None or diagnosis.start_date > self.last_diagnosis.start_date:
-            self.last_diagnosis = diagnosis
+        self.diagnoses.add(diagnosis)
 
         if self.death_date is not None and self.death_date is not datetime.date(datetime.MAXYEAR, 12, 31):
             if diagnosis.start_date > self.death_date:
@@ -72,9 +67,10 @@ class Patient:
         return min(days)
 
     def days_since_last_diagnosis(self, timestamp):
-        if self.last_diagnosis is None:
+        last_diagnosis = self.diagnoses.last_diagnosis
+        if last_diagnosis is None:
             raise Exception("No Diagnoses")
-        return (timestamp - self.last_diagnosis.start_date).days
+        return (timestamp - last_diagnosis.start_date).days
 
     def calculate_age(self, timestamp):
         age = timestamp.year - self.birth_date.year
@@ -183,7 +179,23 @@ class Patient:
 
 
 class DiagnosesDict(dict):
+    def __init__(self, *args, **kw):
+        super(DiagnosesDict, self).__init__(*args, **kw)
+        self.last_diagnosis = None
+
+    def add(self, diagnosis):
+        if not type(diagnosis) is Diagnosis:
+            raise(TypeError, "Type is not a Diagnosis")
+
+        disease = diagnosis.disease
+        if disease not in self.keys():
+            super(DiagnosesDict, self).__setitem__(disease, [])
+        self[disease].append(diagnosis)
+        if self.last_diagnosis is None or self.last_diagnosis < diagnosis:
+            self.last_diagnosis = diagnosis
+
     def iter_diagnoses(self):
         for diagnoses in self.values():
             for diagnosis in diagnoses:
                 yield diagnosis
+
